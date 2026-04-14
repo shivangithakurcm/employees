@@ -1,0 +1,70 @@
+@extends('layouts.admin')
+@section('page-title', 'Add Employee - Step 5')
+
+@section('content')
+<h4 class="mb-3" style="color:#f0c040">Official Details</h4>
+
+{{-- Step Indicator --}}
+<div class="step-indicator mb-4">
+    <div class="step done">1</div>
+    <div class="step done">2</div>
+    <div class="step done">3</div>
+    <div class="step done">4</div>
+    <div class="step active">5</div>
+</div>
+
+<div class="card-dark">
+    <form method="POST" action="{{ route('admin.employees.saveStep5', $employee->id) }}">
+        @csrf
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Date of Joining (DOJ)</label>
+                <input type="date" name="doj"
+                       class="form-control"
+                       value="{{ $employee->officialDetail->doj ?? '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Designation</label>
+                <select name="designation" class="form-select">
+                    <option value="">Select Designation</option>
+                    @foreach(['Manager','Developer','Designer','HR','Accountant','Sales Executive'] as $d)
+                        <option value="{{ $d }}"
+                            {{ ($employee->officialDetail->designation ?? '') == $d ? 'selected' : '' }}>
+                            {{ $d }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Salary</label>
+                <input type="number" name="salary"
+                       class="form-control" placeholder="Type here..."
+                       value="{{ $employee->officialDetail->salary ?? '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Branch</label>
+                <input type="text" name="branch"
+                       class="form-control" placeholder="Type here..."
+                       value="{{ $employee->officialDetail->branch ?? '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Permission</label>
+                <input type="text" name="permission"
+                       class="form-control" placeholder="Type here..."
+                       value="{{ $employee->officialDetail->permission ?? '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Password</label>
+                <input type="password" name="password"
+                       class="form-control" placeholder="Type here...">
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{{ route('admin.employees.step4', $employee->id) }}"
+               class="btn btn-secondary">Back</a>
+            <button type="submit" class="btn btn-gold">Finish ✓</button>
+        </div>
+    </form>
+</div>
+@endsection
