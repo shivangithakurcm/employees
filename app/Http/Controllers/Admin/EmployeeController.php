@@ -38,22 +38,33 @@ class EmployeeController extends Controller
 
    public function storeBasicInfo(Request $request)
 {
-    // 🔥 DEBUG (check if coming here)
-    dd($request->all());
-
-    // validation
     $request->validate([
         'name' => 'required',
         'email' => 'required|email',
         'contact' => 'required',
     ]);
 
-    // save logic
-    // Example:
-    Employee::create($request->all());
+    $employee = new Employee();
 
-    return redirect()->route('admin.employees.index')
-        ->with('success', 'Employee added');
+    $employee->name = $request->name;
+    $employee->email = $request->email;
+    $employee->contact = $request->contact;
+
+    $employee->address = $request->address;
+    $employee->state = $request->state;
+    $employee->city = $request->city;
+    $employee->pincode = $request->pincode;
+    $employee->date_of_birth = $request->date_of_birth;
+    $employee->marital_status = $request->marital_status;
+    $employee->blood_group = $request->blood_group;
+
+    // SAVE EMPLOYEE FIRST (IMPORTANT)
+    $employee->save();
+
+    // OPTIONAL: photo upload logic here
+
+    return redirect()->route('admin.employees.step2', $employee->id)
+        ->with('success', 'Employee added successfully');
 }
 
     // Step 2 - Educational Qualification
@@ -305,7 +316,7 @@ class EmployeeController extends Controller
 
 
 
-    // Toggle Status
+    // Toggle Status status 
     public function toggleStatus($id)
     {
         $employee = Employee::findOrFail($id);
