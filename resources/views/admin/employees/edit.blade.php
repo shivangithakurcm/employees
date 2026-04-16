@@ -164,11 +164,7 @@
                         <label class="form-label">End Date</label>
                         <input type="date" name="qualifications[0][end_date]" class="form-control">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Percentage</label>
-                        <input type="text" name="qualifications[0][percentage]"
-                               class="form-control" placeholder="e.g. 85%">
-                    </div>
+                    
                 </div>
             </div>
             @endforelse
@@ -402,79 +398,187 @@
 </div>
 
 <div class="text-end mb-4">
-    <button type="submit" class="btn btn-warning px-4">
-        Update Employee
-    </button>
+    <button type="button" id="updateBtn" class="btn btn-warning px-4">
+    Update Employee
+</button>
+
+<button type="submit" id="submitupdateBtn" hidden class="btn btn-warning px-4">
+    Update Employee
+</button>
 </div>
 </form>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" 
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+     background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:9999;">
+
+    <div style="background:#1e1e1e; padding:25px; border-radius:10px; width:350px; text-align:center; border:1px solid #f0c040;">
+        
+        <h5 style="color:#f0c040; margin-bottom:15px;">Confirm Update</h5>
+        
+        <p style="color:#fff;">Are you sure you want to save these changes?</p>
+
+        <div class="mt-3 d-flex justify-content-center gap-2">
+            <button id="cancelUpdate" class="btn btn-secondary btn-sm">Cancel</button>
+           <button type="button" id="confirmUpdate" class="btn btn-warning btn-sm">
+    Yes, Update
+</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
-let qCount  = {{ $employee->qualifications->count()      ?: 1 }};
-let empCount = {{ $employee->previousEmployers->count()  ?: 1 }};
-let bankCount = {{ $employee->bankDetails->count()       ?: 1 }};
+document.addEventListener("DOMContentLoaded", function () {
 
-document.getElementById('add-qual').addEventListener('click', function() {
-    const c = document.getElementById('qual-items');
-    const d = document.createElement('div');
-    d.className = 'qual-item border border-secondary rounded p-3 mb-3';
-    d.innerHTML = `<div class="row g-3">
-        <div class="col-md-4"><label class="form-label">Qualification Type</label>
-        <select name="qualifications[${qCount}][qualification_type]" class="form-select">
-            <option value="">Select</option><option>10th</option><option>12th</option>
-            <option>Diploma</option><option>Bachelor's</option><option>Master's</option><option>PhD</option>
-        </select></div>
-        <div class="col-md-4"><label class="form-label">Institution Name</label>
-        <input type="text" name="qualifications[${qCount}][institution_name]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-4"><label class="form-label">Field of Study</label>
-        <input type="text" name="qualifications[${qCount}][field_of_study]" class="form-control" placeholder="e.g. Computer Science"></div>
-        <div class="col-md-4"><label class="form-label">Start Date</label>
-        <input type="date" name="qualifications[${qCount}][start_date]" class="form-control"></div>
-        <div class="col-md-4"><label class="form-label">End Date</label>
-        <input type="date" name="qualifications[${qCount}][end_date]" class="form-control"></div>
-        <div class="col-md-4"><label class="form-label">Percentage</label>
-        <input type="text" name="qualifications[${qCount}][percentage]" class="form-control" placeholder="e.g. 85%"></div>
-    </div>`;
-    c.appendChild(d); qCount++;
+    let qCount   = {{ $employee->qualifications->count() ?: 1 }};
+    let empCount = {{ $employee->previousEmployers->count() ?: 1 }};
+    let bankCount= {{ $employee->bankDetails->count() ?: 1 }};
+
+    // ADD QUALIFICATION
+    document.getElementById('add-qual').addEventListener('click', function () {
+        const c = document.getElementById('qual-items');
+        const d = document.createElement('div');
+        d.className = 'qual-item border border-secondary rounded p-3 mb-3';
+        d.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Qualification Type</label>
+                    <select name="qualifications[${qCount}][qualification_type]" class="form-select">
+                        <option value="">Select</option>
+                        <option>10th</option><option>12th</option>
+                        <option>Diploma</option><option>Bachelor's</option>
+                        <option>Master's</option><option>PhD</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Institution Name</label>
+                    <input type="text" name="qualifications[${qCount}][institution_name]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Field of Study</label>
+                    <input type="text" name="qualifications[${qCount}][field_of_study]" class="form-control" placeholder="e.g. Computer Science">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="qualifications[${qCount}][start_date]" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="qualifications[${qCount}][end_date]" class="form-control">
+                </div>
+                
+            </div>`;
+        c.appendChild(d);
+        qCount++;
+    });
+
+    // ADD EMPLOYER
+    document.getElementById('add-employer').addEventListener('click', function () {
+        const c = document.getElementById('employer-items');
+        const d = document.createElement('div');
+        d.className = 'employer-item border border-secondary rounded p-3 mb-3';
+        d.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" name="employers[${empCount}][company_name]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">HR Name</label>
+                    <input type="text" name="employers[${empCount}][hr_name]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">HR Phone</label>
+                    <input type="text" name="employers[${empCount}][hr_phone]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Address</label>
+                    <input type="text" name="employers[${empCount}][address_line1]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Monthly Salary</label>
+                    <input type="number" name="employers[${empCount}][monthly_salary]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Designation</label>
+                    <input type="text" name="employers[${empCount}][designation]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Duration</label>
+                    <input type="text" name="employers[${empCount}][duration]" class="form-control" placeholder="e.g. 2 Years">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Upload Salary Slip</label>
+                    <input type="file" name="employers[${empCount}][salary_slip]" class="form-control">
+                </div>
+            </div>`;
+        c.appendChild(d);
+        empCount++;
+    });
+
+    // ADD BANK
+    document.getElementById('add-bank').addEventListener('click', function () {
+        const c = document.getElementById('bank-items');
+        const d = document.createElement('div');
+        d.className = 'bank-item border border-secondary rounded p-3 mb-3';
+        d.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Holder Name</label>
+                    <input type="text" name="bank_details[${bankCount}][holder_name]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Bank Name</label>
+                    <input type="text" name="bank_details[${bankCount}][bank_name]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Account Number</label>
+                    <input type="text" name="bank_details[${bankCount}][account_number]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">IFSC Code</label>
+                    <input type="text" name="bank_details[${bankCount}][ifsc_code]" class="form-control" placeholder="Type here...">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Upload Photo</label>
+                    <input type="file" name="bank_details[${bankCount}][photo]" class="form-control" accept="image/*">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Upload Passbook</label>
+                    <input type="file" name="bank_details[${bankCount}][passbook]" class="form-control">
+                </div>
+            </div>`;
+        c.appendChild(d);
+        bankCount++;
+    });
+
+    // UPDATE BUTTON MODAL
+    const updateBtn = document.getElementById('updateBtn');
+    const modal     = document.getElementById('confirmModal');
+    const cancel    = document.getElementById('cancelUpdate');
+    const confirm   = document.getElementById('confirmUpdate');
+
+    const   submitupdateBtn = document.getElementById('submitupdateBtn');
+
+    updateBtn.addEventListener('click', function () {
+        modal.style.display = 'flex';
+    });
+
+    cancel.addEventListener('click', function () {
+        modal.style.display = 'none';
+    });
+
+    confirm.addEventListener('click', function () {
+        $("#submitupdateBtn").click();
+    console.log("Submitting form...");
+    // document.querySelector('form').requestSubmit();
 });
 
-document.getElementById('add-employer').addEventListener('click', function() {
-    const c = document.getElementById('employer-items');
-    const d = document.createElement('div');
-    d.className = 'employer-item border border-secondary rounded p-3 mb-3';
-    d.innerHTML = `<div class="row g-3">
-        <div class="col-md-4"><label class="form-label">Company Name</label>
-        <input type="text" name="employers[${empCount}][company_name]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-4"><label class="form-label">HR Name</label>
-        <input type="text" name="employers[${empCount}][hr_name]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-4"><label class="form-label">HR Phone</label>
-        <input type="text" name="employers[${empCount}][hr_phone]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-4"><label class="form-label">Monthly Salary</label>
-        <input type="number" name="employers[${empCount}][monthly_salary]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-4"><label class="form-label">Designation</label>
-        <input type="text" name="employers[${empCount}][designation]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-4"><label class="form-label">Duration</label>
-        <input type="text" name="employers[${empCount}][duration]" class="form-control" placeholder="e.g. 2 Years"></div>
-    </div>`;
-    c.appendChild(d); empCount++;
-});
+}); // ← DOMContentLoaded end
 
-document.getElementById('add-bank').addEventListener('click', function() {
-    const c = document.getElementById('bank-items');
-    const d = document.createElement('div');
-    d.className = 'bank-item border border-secondary rounded p-3 mb-3';
-    d.innerHTML = `<div class="row g-3">
-        <div class="col-md-6"><label class="form-label">Holder Name</label>
-        <input type="text" name="bank_details[${bankCount}][holder_name]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-6"><label class="form-label">Bank Name</label>
-        <input type="text" name="bank_details[${bankCount}][bank_name]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-6"><label class="form-label">Account Number</label>
-        <input type="text" name="bank_details[${bankCount}][account_number]" class="form-control" placeholder="Type here..."></div>
-        <div class="col-md-6"><label class="form-label">IFSC Code</label>
-        <input type="text" name="bank_details[${bankCount}][ifsc_code]" class="form-control" placeholder="Type here..."></div>
-    </div>`;
-    c.appendChild(d); bankCount++;
-});
 </script>
 @endpush

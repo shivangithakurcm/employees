@@ -9,78 +9,109 @@ use Illuminate\Support\Facades\Hash;
 
 class EmployeeApiController extends Controller
 {
+    // ✅ STORE
     public function store(Request $request)
     {
-        
         $request->validate([
             'name'  => 'required',
             'email' => 'required|email|unique:employees,email'
         ]);
 
-        
         $employee = Employee::create([
-            'name'            => $request->name,
-            'email'           => $request->email,
-            'contact'         => $request->contact,
-            'address'         => $request->address,
-            'designation'     => $request->designation,
-            'salary'          => $request->salary,
-            'permission'      => $request->permission,
-            'state'           => $request->state,
-            'city'            => $request->city,
-            'pincode'         => $request->pincode,
-            'date_of_birth'   => $request->date_of_birth,
-            'marital_status'  => $request->marital_status,
-            'blood_group'     => $request->blood_group,
-            'status'          => 1,
-            'password'        => Hash::make($request->password ?? '123456')
+            'name'        => $request->name,
+            'email'       => $request->email,
+            'contact'     => $request->contact,
+            'designation' => $request->designation,
+            'password'    => Hash::make($request->password ?? '123456'),
+            'status'      => 1
         ]);
 
-        
-        if (!empty($request->qualifications)) {
-
-            foreach ($request->qualifications as $qual) {
-
-                // Skip empty rows
-                if (
-                    empty($qual['qualification_type']) &&
-                    empty($qual['institution_name'])
-                ) {
-                    continue;
-                }
-
-                $employee->qualifications()->create([
-                    'qualification_type' => $qual['qualification_type'] ?? null,
-                    'institution_name'  => $qual['institution_name'] ?? null,
-                    'field_of_study'    => $qual['field_of_study'] ?? null,
-                    'start_date'        => $qual['start_date'] ?? null,
-                    'end_date'          => $qual['end_date'] ?? null,
-                    'percentage'        => $qual['percentage'] ?? null,
-                ]);
-            }
-        }
-
-        //final response
         return response()->json([
-            'status'  => true,
-            'message' => 'Employee + qualifications saved successfully',
-            'data'    => $employee->load('qualifications')
-        ], 201);
+            'status' => true,
+            'message' => 'Employee created',
+            'data' => $employee
+        ]);
     }
 
+    // ✅ GET ALL
     public function index()
+    {
+        return response()->json([
+            'status' => true,
+            'data' => Employee::all()
+        ]);
+    }
+
+    
+    // ✅ MULTIPLE UPDATE (SAFE 🔥)
+   public function updateMultiple(Request $request)
 {
-    $employees = Employee::with([
-        'qualifications',
-        'previousEmployers',
-        'bankDetails'
-    ])->get();
+    $ids = $request->input('ids');
+
+    // ✅ allow single OR multiple
+    if (empty($ids)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Invalid ids'
+        ]);
+    }
+
+    // if single id comes like 7 → convert to array [7]
+    if (!is_array($ids)) {
+        $ids = [$ids];
+    }
+
+    // optional: convert "7,8,9" string into array
+    if (count($ids) == 1 && str_contains($ids[0], ',')) {
+        $ids = explode(',', $ids[0]);
+    }
+
+    $data = [];
+
+    if ($request->has('name')) {
+        $data['name'] = $request->name;
+    }
+
+    if ($request->has('designation')) {
+        $data['designation'] = $request->designation;
+    }
+
+    if (empty($data)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'No data to update'
+        ]);
+    }
+
+    $updatedCount = Employee::whereIn('id', $ids)->update($data);
 
     return response()->json([
         'status' => true,
-        'data' => $employees
+        'updated_rows' => $updatedCount,
+        'message' => 'Updated successfully'
     ]);
 }
+public function destroyMultiple(Request $request)
+{
+    $ids = $request->ids;
+
+    // Validate ids
+    if (!$ids || !is_array($ids)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Please provide valid ids'
+        ]);
+    }
+
+    // Delete records
+    Employee::whereIn('id', $ids)->delete();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Selected employees deleted successfully'
+    ]);
+}
+
 
 
 }
