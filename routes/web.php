@@ -3,6 +3,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\LmsController;
 
 // Root redirect
 Route::get('/', function () {
@@ -13,7 +14,7 @@ Route::get('/', function () {
 Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AdminAuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
-
+Route::resource('lms', LmsController::class);
 // Admin Protected Routes
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -40,10 +41,18 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Step 4 - Bank Details
     Route::get('/employees/{id}/step4', [EmployeeController::class, 'step4'])->name('employees.step4');
     Route::post('/employees/{id}/step4', [EmployeeController::class, 'saveStep4'])->name('employees.saveStep4');
+       
+    Route::get('/lms/{lm}',         [LmsController::class, 'show'])->name('lms.show');
+Route::get('/lms/{lm}/edit',    [LmsController::class, 'edit'])->name('lms.edit');
+Route::put('/lms/{lm}',         [LmsController::class, 'update'])->name('lms.update');
+
+
 
     // Step 5 - Official Details
     Route::get('/employees/{id}/step5', [EmployeeController::class, 'step5'])->name('employees.step5');
     Route::post('/employees/{id}/step5', [EmployeeController::class, 'saveStep5'])->name('employees.saveStep5');
 
+   Route::post('/lms/action', [LmsController::class, 'action'])->name('lms.action');
     Route::post('/employees/{id}/toggle', [EmployeeController::class, 'toggleStatus'])->name('employees.toggle');
 });
+

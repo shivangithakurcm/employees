@@ -324,4 +324,37 @@ class EmployeeController extends Controller
         $employee->save();
         return back()->with('success', 'Status updated!');
     }
+
+
+    public function lmsAction(Request $request)
+{
+    $lead = Lead::find($request->lead_id);
+
+    if (!$lead) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Lead not found'
+        ]);
+    }
+
+    // status update
+    $lead->status = $request->action_type;
+
+    // date time logic
+    if (in_array($request->action_type, ['call_schedule', 'call_back_required', 'reschedule'])) {
+        $lead->date = $request->date;
+        $lead->time = $request->time;
+    } else {
+        $lead->date = null;
+        $lead->time = null;
+    }
+
+    $lead->comment = $request->comment;
+    $lead->save();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Action updated successfully'
+    ]);
+}
 }

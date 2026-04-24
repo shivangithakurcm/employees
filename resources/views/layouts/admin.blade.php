@@ -81,9 +81,10 @@
    class="{{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
     <i class="fas fa-users me-2"></i> Employee
 </a>
-    <a href="#">
-        <i class="fas fa-chart-line me-2"></i> LMS
-    </a>
+   <a href="{{ route('lms.index') }}"
+   class="{{ request()->routeIs('lms.*') ? 'active' : '' }}">
+    <i class="fas fa-chart-line me-2"></i> LMS
+</a>
 </div>
 
 {{-- Main Content --}}
@@ -91,15 +92,30 @@
 
     {{-- Topbar --}}
     <div class="topbar">
-        <span style="color:#f0c040">@yield('page-title', 'Dashboard')</span>
-        <div class="d-flex align-items-center gap-3">
-            <span class="rounded-circle bg-warning text-dark px-2 py-1 fw-bold">A</span>
-            <form action="{{ route('logout') }}" method="POST" class="m-0">
-                @csrf
-                <button type="submit" class="btn btn-sm btn-outline-warning">Logout</button>
-            </form>
+    <span style="color:#f0c040">@yield('page-title', 'Dashboard')</span>
+
+    <div class="d-flex align-items-center gap-3">
+        
+        <!-- Dropdown -->
+        <div class="dropdown">
+            <span class="rounded-circle bg-warning text-dark px-2 py-1 fw-bold dropdown-toggle"
+                  role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                  style="cursor:pointer;">
+                A
+            </span>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <form action="{{ route('logout') }}" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="dropdown-item">Logout</button>
+                    </form>
+                </li>
+            </ul>
         </div>
+
     </div>
+</div>
 
     {{-- Flash Messages --}}
     @if(session('success'))

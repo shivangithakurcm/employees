@@ -12,7 +12,9 @@
     <form action="{{ route('lms.update', $lm->id) }}" method="POST">
         @csrf
         @method('PUT')
-        <input type="hidden" name="discussion" id="discussionField" value="{{ $lm->discussion ?? 'add' }}">
+
+        {{-- ✅ Hidden field: draft ya update decide karta hai --}}
+        <input type="hidden" name="discussion" id="discussionField" value="update">
 
         <div class="row g-3">
             <div class="col-md-4">
@@ -80,6 +82,8 @@
                     @endforeach
                 </select>
             </div>
+
+            {{-- Date/Time — call_back_required ya call_schedule pe dikhe --}}
             <div class="col-md-4" id="editDateField"
                  style="{{ in_array($lm->status, ['call_back_required','call_schedule']) ? '' : 'display:none;' }}">
                 <label class="form-label">Date</label>
@@ -92,6 +96,7 @@
                 <input type="time" name="time" class="form-control"
                        value="{{ $lm->time }}">
             </div>
+
             <div class="col-md-8">
                 <label class="form-label">Requirement</label>
                 <input type="text" name="requirement" class="form-control"
@@ -106,23 +111,27 @@
 
         <div class="mt-4 text-end">
             <a href="{{ route('lms.index') }}" class="btn btn-secondary me-2">Cancel</a>
-            {{-- ✅ Draft button --}}
+
+            {{-- ✅ Draft Button --}}
             <button type="button" id="draftBtn" class="btn btn-outline-warning me-2">Save as Draft</button>
-            {{-- ✅ Update button --}}
+
+            {{-- ✅ Update Button --}}
             <button type="button" id="updateBtn" class="btn btn-gold">Update Lead</button>
+
+            {{-- Hidden submit --}}
             <button type="submit" id="submitBtn" hidden></button>
         </div>
     </form>
 </div>
 
-{{-- ✅ Confirm Popup --}}
+{{-- ✅ Confirm Update Modal --}}
 <div id="confirmModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:999999;">
+            background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:9999;">
     <div style="background:#1e1e1e; padding:25px; border-radius:10px;
                 width:350px; text-align:center; border:1px solid #f0c040;">
-        <h5 style="color:#f0c040; margin-bottom:15px;" id="popupTitle">Confirm Update</h5>
-        <p style="color:#fff;" id="popupMsg">Do you want to save these changes?</p>
+        <h5 style="color:#f0c040; margin-bottom:15px;" id="confirmModalTitle">Confirm Update</h5>
+        <p style="color:#fff;" id="confirmModalText">Do you want to save these changes?</p>
         <div class="mt-3 d-flex justify-content-center gap-2">
             <button id="cancelBtn" class="btn btn-secondary btn-sm">Cancel</button>
             <button id="confirmBtn" class="btn btn-gold btn-sm">Yes, Save</button>
@@ -134,47 +143,48 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Edit Status Date/Time toggle
+document.getElementById('editStatus').addEventListener('change', function() {
+    var show = ['call_back_required', 'call_schedule'].includes(this.value);
+    document.getElementById('editDateField').style.display = show ? 'block' : 'none';
+    document.getElementById('editTimeField').style.display = show ? 'block' : 'none';
+});
 
-    // ✅ Status change pe Date/Time show hide
-    document.getElementById('editStatus').addEventListener('change', function() {
-        var show = ['call_back_required', 'call_schedule'].includes(this.value);
-        document.getElementById('editDateField').style.display = show ? 'block' : 'none';
-        document.getElementById('editTimeField').style.display = show ? 'block' : 'none';
-    });
+const modal            = document.getElementById('confirmModal');
+const updateBtn        = document.getElementById('updateBtn');
+const draftBtn         = document.getElementById('draftBtn');
+const cancelBtn        = document.getElementById('cancelBtn');
+const confirmBtn       = document.getElementById('confirmBtn');
+const submitBtn        = document.getElementById('submitBtn');
+const discussionField  = document.getElementById('discussionField');
+const confirmModalTitle = document.getElementById('confirmModalTitle');
+const confirmModalText  = document.getElementById('confirmModalText');
 
-    const confirmModal = document.getElementById('confirmModal');
-    const cancelBtn    = document.getElementById('cancelBtn');
-    const confirmBtn   = document.getElementById('confirmBtn');
-    const submitBtn    = document.getElementById('submitBtn');
-    const popupTitle   = document.getElementById('popupTitle');
-    const popupMsg     = document.getElementById('popupMsg');
+// ✅ Update Lead button click
+updateBtn.addEventListener('click', function() {
+    discussionField.value   = 'update';
+    confirmModalTitle.textContent = 'Confirm Update';
+    confirmModalText.textContent  = 'Do you want to save these changes?';
+    modal.style.display = 'flex';
+});
 
-    // ✅ Update button
-    document.getElementById('updateBtn').addEventListener('click', function() {
-        document.getElementById('discussionField').value = 'add';
-        popupTitle.innerText = 'Confirm Update';
-        popupMsg.innerText   = 'Do you want to save these changes?';
-        confirmModal.style.display = 'flex';
-    });
+// ✅ Save as Draft button click
+draftBtn.addEventListener('click', function() {
+    discussionField.value   = 'draft';
+    confirmModalTitle.textContent = 'Save as Draft';
+    confirmModalText.textContent  = 'Do you want to save this lead as Draft?';
+    modal.style.display = 'flex';
+});
 
-    // ✅ Draft button
-    document.getElementById('draftBtn').addEventListener('click', function() {
-        document.getElementById('discussionField').value = 'draft';
-        popupTitle.innerText = 'Save as Draft';
-        popupMsg.innerText   = 'Do you want to save this as draft?';
-        confirmModal.style.display = 'flex';
-    });
+// Cancel
+cancelBtn.addEventListener('click', function() {
+    modal.style.display = 'none';
+});
 
-    cancelBtn.addEventListener('click', function() {
-        confirmModal.style.display = 'none';
-    });
-
-    confirmBtn.addEventListener('click', function() {
-        confirmModal.style.display = 'none';
-        submitBtn.click();
-    });
-
+// Confirm → form submit
+confirmBtn.addEventListener('click', function() {
+    modal.style.display = 'none';
+    submitBtn.click();
 });
 </script>
 @endpush
