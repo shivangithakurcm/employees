@@ -11,7 +11,6 @@ class LmsController extends Controller
     {
         $query = Lead::query();
 
-        // ✅ All Leads tab — draft chhod ke sab dikhe
         if (!$request->status) {
             $query->where(function($q) {
                 $q->where('discussion', 'add')
@@ -19,7 +18,6 @@ class LmsController extends Controller
             });
         }
 
-        // 🔍 Search
         if ($request->search) {
             $query->where(function($q) use ($request){
                 $q->where('first_name', 'like', '%'.$request->search.'%')
@@ -28,27 +26,21 @@ class LmsController extends Controller
             });
         }
 
-        // 📅 Date Filter
         if ($request->date) {
             $query->whereDate('created_at', $request->date);
         }
 
-        // 🗺️ State Filter
         if ($request->state) {
             $query->where('state', $request->state);
         }
 
-        // 📍 City Filter
         if ($request->city) {
             $query->where('city', 'like', '%'.$request->city.'%');
         }
 
-        // 📌 Status Filter
         if ($request->status) {
-
             if ($request->status == 'draft') {
                 $query->where('discussion', 'draft');
-
             } elseif ($request->status == 'follow_up') {
                 if ($request->type == 'call_back_required') {
                     $query->where('status', 'call_back_required');
@@ -57,19 +49,16 @@ class LmsController extends Controller
                 } else {
                     $query->whereIn('status', ['call_back_required', 'call_schedule']);
                 }
-
             } else {
                 $query->where('status', $request->status);
             }
         }
 
-        $leads = $query->latest()->paginate(10);
+        $leads = $query->latest()->paginate(5);
 
-        // 📊 Count badges
         $counts = [
             'all' => Lead::where(function($q) {
-                $q->where('discussion', 'add')
-                  ->orWhereNull('discussion');
+                $q->where('discussion', 'add')->orWhereNull('discussion');
             })->count(),
             'follow_up'          => Lead::whereIn('status', ['call_back_required', 'call_schedule'])->count(),
             'qualified'          => Lead::where('status', 'qualified')->count(),
@@ -84,7 +73,6 @@ class LmsController extends Controller
         return view('lms.lmsindex', compact('leads', 'counts'));
     }
 
-    // ➕ Add Lead
     public function store(Request $request)
     {
         $request->validate([
@@ -116,25 +104,24 @@ class LmsController extends Controller
             'time'           => $request->time,
             'status'         => $request->status,
             'comment'        => $request->comment,
-            'discussion'     => $request->discussion, // ✅ draft/add
+            'discussion'     => $request->discussion,
         ]);
 
-        return redirect()->route('lms.index')->with('success', 'Lead added successfully!');
+        // ✅ admin. prefix add kiya
+        return redirect()->route('admin.lms.index')->with('success', 'Lead added successfully!');
     }
 
-    // 👁️ Show
     public function show(Lead $lm)
     {
         return view('lms.show', compact('lm'));
     }
 
-    // ✏️ Edit
     public function edit(Lead $lm)
     {
+        // ✅ dd() hataya
         return view('lms.edit', compact('lm'));
     }
 
-    // 💾 Update
     public function update(Request $request, Lead $lm)
     {
         $request->validate([
@@ -152,8 +139,6 @@ class LmsController extends Controller
             'comment'        => 'nullable|string',
         ]);
 
-        // ✅ Draft button → discussion = 'draft' (Draft tab me rahega)
-        // ✅ Update button → discussion = 'add'  (All Leads me dikhega)
         $discussion = $request->input('discussion') === 'draft' ? 'draft' : 'add';
 
         $lm->update([
@@ -170,20 +155,20 @@ class LmsController extends Controller
             'time'           => $request->time,
             'status'         => $request->status,
             'comment'        => $request->comment,
-            'discussion'     => $discussion, // ✅ yahi key change hai
+            'discussion'     => $discussion,
         ]);
 
-        return redirect()->route('lms.index')->with('success', 'Lead updated successfully!');
+        // ✅ admin. prefix add kiya
+        return redirect()->route('admin.lms.index')->with('success', 'Lead updated successfully!');
     }
 
-    // ❌ Delete
     public function destroy(Lead $lm)
     {
         $lm->delete();
-        return redirect()->route('lms.index')->with('success', 'Lead deleted!');
+        // ✅ admin. prefix add kiya
+        return redirect()->route('admin.lms.index')->with('success', 'Lead deleted!');
     }
 
-    // ⚡ Action
     public function action(Request $request)
     {
         $request->validate([
@@ -201,25 +186,21 @@ class LmsController extends Controller
             $lead->date   = null;
             $lead->time   = null;
         }
-
         if ($request->action_type == 'qualified') {
             $lead->status = 'qualified';
             $lead->date   = null;
             $lead->time   = null;
         }
-
         if ($request->action_type == 'reschedule') {
             $lead->status = 'call_back_required';
             $lead->date   = $request->date;
             $lead->time   = $request->time;
         }
-
         if ($request->action_type == 'call_schedule') {
             $lead->status = 'call_schedule';
             $lead->date   = $request->date;
             $lead->time   = $request->time;
         }
-
         if ($request->action_type == 'call_back_required') {
             $lead->status = 'call_back_required';
             $lead->date   = $request->date;

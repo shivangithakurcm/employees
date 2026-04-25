@@ -3,9 +3,11 @@
 @section('content')
 
 <div class="d-flex justify-content-between mb-4">
-    <a href="{{ route('lms.index') }}"
+    {{-- ✅ Fix 1: admin.lmsindex → admin.lms.index --}}
+    <a href="{{ route('admin.lms.index') }}"
        style="color:#f0c040; text-decoration:none; font-size:1.1rem;">← Back</a>
-    <a href="{{ route('lms.edit', $lm->id) }}" class="btn btn-gold">✏️ Edit Lead</a>
+    {{-- ✅ Fix 2: lms.edit → admin.lms.edit --}}
+    <a href="{{ route('admin.lms.edit', $lm->id) }}" class="btn btn-gold">✏️ Edit Lead</a>
 </div>
 
 <div class="card-dark">

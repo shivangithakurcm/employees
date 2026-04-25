@@ -7,17 +7,10 @@
 svg.w-5.h-5 { display: none; }
 .pagination { justify-content: center; }
 .pagination .page-link { background: #f0c040 !important; color: #000 !important; border: 1px solid #000 !important; margin: 2px; }
-.pagination .page-link:hover { background: #000 !important; color: #f0c040 !important; }
+.pagination .page-link:hover { background: #000 !important; color: #f0b207 !important; }
 .pagination .active .page-link { background: #000 !important; color: #f0c040 !important; }
-
-.form-control::placeholder {
-    color: #bbb !important;
-    opacity: 1 !important;
-}
-
-.form-control {
-    color: #fff !important;
-}
+.form-control::placeholder { color: #bbb !important; opacity: 1 !important; }
+.form-control { color: #fff !important; }
 </style>
 
 @php
@@ -31,39 +24,38 @@ svg.w-5.h-5 { display: none; }
 
 {{-- Status Tabs --}}
 <div class="d-flex gap-2 mb-4" style="width:100%;">
-    <a href="{{ route('lms.index') }}"
+    <a href="{{ route('admin.lms.index') }}"
        class="btn tab-btn flex-fill {{ !$currentStatus ? 'btn-warning' : 'btn-outline-secondary' }}">
         All Leads <span class="badge bg-dark ms-1">{{ $counts['all'] }}</span>
     </a>
-    <a href="{{ route('lms.index', ['status' => 'follow_up']) }}"
+    <a href="{{ route('admin.lms.index', ['status' => 'follow_up']) }}"
        class="btn tab-btn flex-fill {{ $isFollowUp ? 'btn-warning' : 'btn-outline-secondary' }}">
         Follow Up <span class="badge bg-dark ms-1">{{ $counts['follow_up'] }}</span>
     </a>
-    <a href="{{ route('lms.index', ['status' => 'qualified']) }}"
+    <a href="{{ route('admin.lms.index', ['status' => 'qualified']) }}"
        class="btn tab-btn flex-fill {{ $currentStatus == 'qualified' ? 'btn-warning' : 'btn-outline-secondary' }}">
         Qualified <span class="badge bg-dark ms-1">{{ $counts['qualified'] }}</span>
     </a>
-    <a href="{{ route('lms.index', ['status' => 'proposal_sent']) }}"
+    <a href="{{ route('admin.lms.index', ['status' => 'proposal_sent']) }}"
        class="btn tab-btn flex-fill {{ $currentStatus == 'proposal_sent' ? 'btn-warning' : 'btn-outline-secondary' }}">
         Proposal Sent <span class="badge bg-dark ms-1">{{ $counts['proposal_sent'] }}</span>
     </a>
-    <a href="{{ route('lms.index', ['status' => 'lost']) }}"
+    <a href="{{ route('admin.lms.index', ['status' => 'lost']) }}"
        class="btn tab-btn flex-fill {{ $currentStatus == 'lost' ? 'btn-warning' : 'btn-outline-secondary' }}">
         Lost <span class="badge bg-dark ms-1">{{ $counts['lost'] }}</span>
     </a>
-    <a href="{{ route('lms.index', ['status' => 'won']) }}"
+    <a href="{{ route('admin.lms.index', ['status' => 'won']) }}"
        class="btn tab-btn flex-fill {{ $currentStatus == 'won' ? 'btn-warning' : 'btn-outline-secondary' }}">
         Won <span class="badge bg-dark ms-1">{{ $counts['won'] }}</span>
     </a>
-
-    <a href="{{ route('lms.index', ['status' => 'draft']) }}"
-   class="btn tab-btn flex-fill {{ $currentStatus == 'draft' ? 'btn-warning' : 'btn-outline-secondary' }}">
-    Draft <span class="badge bg-dark ms-1">{{ $counts['draft'] }}</span>
-</a>
+    <a href="{{ route('admin.lms.index', ['status' => 'draft']) }}"
+       class="btn tab-btn flex-fill {{ $currentStatus == 'draft' ? 'btn-warning' : 'btn-outline-secondary' }}">
+        Draft <span class="badge bg-dark ms-1">{{ $counts['draft'] }}</span>
+    </a>
 </div>
 
 {{-- Search + Filters --}}
-<form method="GET" action="{{ route('lms.index') }}">
+<form method="GET" action="{{ route('admin.lms.index') }}">
     @if($currentStatus)
         <input type="hidden" name="status" value="{{ $currentStatus }}">
     @endif
@@ -71,17 +63,18 @@ svg.w-5.h-5 { display: none; }
         <input type="hidden" name="type" value="{{ $currentType }}">
     @endif
 
-    <div class="row g-2 mb-4 align-items-center">
-        <div class="col-md-3">
-    <div class="input-group">
-        <span class="input-group-text bg-dark text-warning border-secondary">
-            <i class="fas fa-search"></i>
-        </span>
-        <input type="text" name="search" class="form-control bg-dark text-white border-secondary"
-               placeholder="Search..."
-               value="{{ request('search') }}">
+   <div class="row g-2 mb-4 align-items-center">
+    <div class="col-md-3">
+        <div class="input-group">
+            <span class="input-group-text bg-dark text-warning border-secondary border-end-0">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" name="search" 
+                   class="form-control bg-dark text-white border-secondary border-start-0" 
+                   placeholder="Search..." 
+                   value="{{ request('search') }}">
+        </div>
     </div>
-</div>
         <div class="col-md-2">
             <input type="date" name="date" class="form-control" value="{{ request('date') }}">
         </div>
@@ -93,18 +86,15 @@ svg.w-5.h-5 { display: none; }
                 @endforeach
             </select>
         </div>
-       <div class="col-md-2">
-    <input type="text" name="city"
-           class="form-control bg-dark text-white border-secondary"
-           style="height:38px;"
-           placeholder="City Filter"
-           value="{{ request('city') }}">
-</div>
+        <div class="col-md-2">
+            <input type="text" name="city" class="form-control bg-dark text-white border-secondary"
+                   style="height:38px;" placeholder="City Filter" value="{{ request('city') }}">
+        </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-gold">Filter</button>
         </div>
         <div class="col-auto">
-            <a href="{{ route('lms.index') }}" class="btn btn-outline-secondary">Reset</a>
+            <a href="{{ route('admin.lms.index') }}" class="btn btn-outline-secondary">Reset</a>
         </div>
         @if(!$isFollowUp)
         <div class="col-auto">
@@ -120,12 +110,12 @@ svg.w-5.h-5 { display: none; }
 {{-- Follow Up Sub Tabs --}}
 @if($isFollowUp)
 <div class="d-flex gap-2 mb-3">
-    <a href="{{ route('lms.index', ['status'=>'follow_up','type'=>'call_back_required']) }}"
+    <a href="{{ route('admin.lms.index', ['status'=>'follow_up','type'=>'call_back_required']) }}"
        class="btn {{ $isCallBackRequired ? 'btn-warning' : 'btn-outline-warning' }}">
         Call Back Required
         <span class="badge bg-dark ms-1">{{ $counts['call_back_required'] }}</span>
     </a>
-    <a href="{{ route('lms.index', ['status'=>'follow_up','type'=>'call_schedule']) }}"
+    <a href="{{ route('admin.lms.index', ['status'=>'follow_up','type'=>'call_schedule']) }}"
        class="btn {{ $isCallSchedule ? 'btn-info' : 'btn-outline-info' }}">
         Call Schedule
         <span class="badge bg-dark ms-1">{{ $counts['call_schedule'] }}</span>
@@ -134,11 +124,12 @@ svg.w-5.h-5 { display: none; }
 @endif
 
 {{-- Leads Table --}}
-<div class="card-dark">
-    <table class="table table-dark table-bordered table-hover mb-0">
+<div class="card-dark" style="overflow: hidden; padding-bottom: 0;">
+    <div style="overflow-x: auto;">
+        <table class="table table-dark table-bordered mb-0" style="white-space: nowrap;">
         <thead>
             <tr>
-                <th>#</th>
+                <th>Sno.</th>
                 <th>Full Name</th>
                 <th>Contact</th>
                 <th>Email</th>
@@ -157,7 +148,7 @@ svg.w-5.h-5 { display: none; }
         <tbody>
             @forelse($leads as $lead)
             <tr>
-                <td>{{ $loop->iteration }}</td>
+                <td>{{ ($leads->currentPage() - 1) * $leads->perPage() + $loop->iteration }}</td>
                 <td>{{ $lead->first_name }} {{ $lead->last_name }}</td>
                 <td>{{ $lead->contact_number }}</td>
                 <td>{{ $lead->email ?? '-' }}</td>
@@ -182,32 +173,30 @@ svg.w-5.h-5 { display: none; }
                     </span>
                 </td>
                 <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
-
-                {{-- ✅ V E A D buttons --}}
-                <td class="d-flex gap-1">
-                    <a href="{{ route('lms.show', $lead->id) }}" class="btn btn-sm btn-info">V</a>
-                    <a href="{{ route('lms.edit', $lead->id) }}" class="btn btn-sm btn-warning">E</a>
+                <td style="white-space:nowrap; vertical-align:middle;">
+    <div class="d-flex gap-1">
+                    <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info">V</a>
+                    <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning">E</a>
 
                     @if(!$currentStatus)
-        <button class="btn btn-sm btn-success" disabled style="opacity:0.4; cursor:not-allowed;">A</button>
-    @else
-        <button class="btn btn-sm btn-success"
-            data-bs-toggle="modal"
-            data-bs-target="#actionModal"
-            onclick="setLead({{ $lead->id }}, '{{ $lead->status }}')">A</button>
-    @endif
+                        <button class="btn btn-sm btn-success" disabled style="opacity:0.4; cursor:not-allowed;">A</button>
+                    @else
+                        <button class="btn btn-sm btn-success"
+                            data-bs-toggle="modal"
+                            data-bs-target="#actionModal"
+                            onclick="setLead({{ $lead->id }}, '{{ $lead->status }}')">A</button>
+                    @endif
 
-                    {{-- ✅ Delete button --}}
                     <button type="button" class="btn btn-sm btn-danger"
                         onclick="confirmDelete({{ $lead->id }})">D</button>
 
-                    {{-- ✅ Hidden delete form --}}
                     <form id="deleteForm{{ $lead->id }}"
-                          action="{{ route('lms.destroy', $lead->id) }}"
+                          action="{{ route('admin.lms.destroy', $lead->id) }}"
                           method="POST" style="display:none;">
                         @csrf
                         @method('DELETE')
                     </form>
+</div>
                 </td>
             </tr>
             @empty
@@ -219,6 +208,7 @@ svg.w-5.h-5 { display: none; }
             @endforelse
         </tbody>
     </table>
+</div>
     <div class="mt-3">
         {{ $leads->withQueryString()->links() }}
     </div>
@@ -232,7 +222,7 @@ svg.w-5.h-5 { display: none; }
                 <h5 class="modal-title">Add Lead</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ route('lms.store') }}" method="POST">
+            <form action="{{ route('admin.lms.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="row g-3">
@@ -320,7 +310,7 @@ svg.w-5.h-5 { display: none; }
 <div class="modal fade" id="actionModal">
     <div class="modal-dialog">
         <div class="modal-content bg-dark text-white">
-           <form id="actionForm" action="{{ route('admin.lms.action') }}" method="POST">
+            <form id="actionForm" action="{{ route('admin.lms.action') }}" method="POST">
                 @csrf
                 <input type="hidden" name="lead_id" id="leadId">
                 <input type="hidden" name="lead_status" id="leadStatus">
@@ -357,7 +347,7 @@ svg.w-5.h-5 { display: none; }
     </div>
 </div>
 
-{{-- ✅ Action Confirm Popup --}}
+{{-- Action Confirm Popup --}}
 <div id="actionConfirmModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:999999;">
@@ -372,7 +362,7 @@ svg.w-5.h-5 { display: none; }
     </div>
 </div>
 
-{{-- ✅ Delete Confirm Popup --}}
+{{-- Delete Confirm Popup --}}
 <div id="deleteConfirmModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:999999;">
@@ -393,31 +383,23 @@ svg.w-5.h-5 { display: none; }
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-    // ✅ Action Confirm Popup
-    const actionConfirmModal  = document.getElementById('actionConfirmModal');
-    const actionSubmitBtn     = document.getElementById('actionSubmitBtn');
-    const actionCancelBtn     = document.getElementById('actionCancelBtn');
-    const actionConfirmBtn    = document.getElementById('actionConfirmBtn');
-    const actionForm          = document.getElementById('actionForm');
+    const actionConfirmModal = document.getElementById('actionConfirmModal');
+    const actionSubmitBtn    = document.getElementById('actionSubmitBtn');
+    const actionCancelBtn    = document.getElementById('actionCancelBtn');
+    const actionConfirmBtn   = document.getElementById('actionConfirmBtn');
+    const actionForm         = document.getElementById('actionForm');
 
     actionSubmitBtn.addEventListener('click', function() {
         var bsModal = bootstrap.Modal.getInstance(document.getElementById('actionModal'));
         if(bsModal) bsModal.hide();
-        setTimeout(function() {
-            actionConfirmModal.style.display = 'flex';
-        }, 300);
+        setTimeout(function() { actionConfirmModal.style.display = 'flex'; }, 300);
     });
-
-    actionCancelBtn.addEventListener('click', function() {
-        actionConfirmModal.style.display = 'none';
-    });
-
+    actionCancelBtn.addEventListener('click', function() { actionConfirmModal.style.display = 'none'; });
     actionConfirmBtn.addEventListener('click', function() {
         actionConfirmModal.style.display = 'none';
         actionForm.submit();
     });
 
-    // ✅ Delete Confirm Popup
     let deleteLeadId = null;
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
     const deleteCancelBtn    = document.getElementById('deleteCancelBtn');
@@ -427,26 +409,19 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteLeadId = id;
         deleteConfirmModal.style.display = 'flex';
     };
-
     deleteCancelBtn.addEventListener('click', function() {
         deleteLeadId = null;
         deleteConfirmModal.style.display = 'none';
     });
-
     deleteConfirmBtn.addEventListener('click', function() {
-        if(deleteLeadId) {
-            document.getElementById('deleteForm' + deleteLeadId).submit();
-        }
+        if(deleteLeadId) document.getElementById('deleteForm' + deleteLeadId).submit();
     });
 
-    // ✅ setLead function
     window.setLead = function(id, status) {
         document.getElementById('leadId').value = id;
         document.getElementById('leadStatus').value = status;
-
         let actionType = document.getElementById('actionType');
         actionType.innerHTML = '<option value="">Select</option>';
-
         if(status === 'call_schedule') {
             actionType.innerHTML += '<option value="lost">Lost</option>';
             actionType.innerHTML += '<option value="call_schedule">Call Schedule</option>';
@@ -460,17 +435,14 @@ document.addEventListener('DOMContentLoaded', function() {
             actionType.innerHTML += '<option value="qualified">Qualified</option>';
             actionType.innerHTML += '<option value="reschedule">Reschedule</option>';
         }
-
         document.getElementById('actionDate').style.display = 'none';
         document.getElementById('actionTime').style.display = 'none';
         document.getElementById('actionType').value = '';
     };
 
-    // ✅ Action Type change
     document.getElementById('actionType').addEventListener('change', function() {
         let val    = this.value;
         let status = document.getElementById('leadStatus').value;
-
         if(status === 'call_schedule') {
             if(val === 'lost') {
                 document.getElementById('actionDate').style.display = 'none';
@@ -490,20 +462,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ✅ Add Lead Modal reset
     document.getElementById('addLeadModal').addEventListener('hidden.bs.modal', function() {
         document.getElementById('dateField').style.display = 'none';
         document.getElementById('timeField').style.display = 'none';
         document.getElementById('statusSelect').value = '';
     });
 
-    // ✅ Add Lead status change
     document.getElementById('statusSelect').addEventListener('change', function() {
         var show = ['call_back_required', 'call_schedule'].includes(this.value);
         document.getElementById('dateField').style.display = show ? 'block' : 'none';
         document.getElementById('timeField').style.display = show ? 'block' : 'none';
     });
 
-}); // DOMContentLoaded end
+});
 </script>
 @endpush

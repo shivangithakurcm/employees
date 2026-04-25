@@ -3,17 +3,16 @@
 @section('content')
 
 <div class="d-flex justify-content-between mb-4">
-    <a href="{{ route('lms.show', $lm->id) }}"
+    <a href="{{ route('admin.lms.show', $lm->id) }}"
        style="color:#f0c040; text-decoration:none; font-size:1.1rem;">← Back</a>
     <h4 style="color:#f0c040">Edit Lead</h4>
 </div>
 
 <div class="card-dark">
-    <form action="{{ route('lms.update', $lm->id) }}" method="POST">
+    <form action="{{ route('admin.lms.update', $lm->id) }}" method="POST">
         @csrf
         @method('PUT')
 
-        {{-- ✅ Hidden field: draft ya update decide karta hai --}}
         <input type="hidden" name="discussion" id="discussionField" value="update">
 
         <div class="row g-3">
@@ -53,13 +52,11 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">City</label>
-                <input type="text" name="city" class="form-control"
-                       value="{{ $lm->city }}">
+                <input type="text" name="city" class="form-control" value="{{ $lm->city }}">
             </div>
             <div class="col-md-4">
                 <label class="form-label">Country</label>
-                <input type="text" name="country" class="form-control"
-                       value="{{ $lm->country }}">
+                <input type="text" name="country" class="form-control" value="{{ $lm->country }}">
             </div>
             <div class="col-md-4">
                 <label class="form-label">Status *</label>
@@ -83,48 +80,37 @@
                 </select>
             </div>
 
-            {{-- Date/Time — call_back_required ya call_schedule pe dikhe --}}
             <div class="col-md-4" id="editDateField"
                  style="{{ in_array($lm->status, ['call_back_required','call_schedule']) ? '' : 'display:none;' }}">
                 <label class="form-label">Date</label>
-                <input type="date" name="date" class="form-control"
-                       value="{{ $lm->date }}">
+                <input type="date" name="date" class="form-control" value="{{ $lm->date }}">
             </div>
             <div class="col-md-4" id="editTimeField"
                  style="{{ in_array($lm->status, ['call_back_required','call_schedule']) ? '' : 'display:none;' }}">
                 <label class="form-label">Time</label>
-                <input type="time" name="time" class="form-control"
-                       value="{{ $lm->time }}">
+                <input type="time" name="time" class="form-control" value="{{ $lm->time }}">
             </div>
 
             <div class="col-md-8">
                 <label class="form-label">Requirement</label>
-                <input type="text" name="requirement" class="form-control"
-                       value="{{ $lm->Requirement }}">
+                <input type="text" name="requirement" class="form-control" value="{{ $lm->Requirement }}">
             </div>
             <div class="col-12">
                 <label class="form-label">Comment</label>
-                <textarea name="comment" class="form-control"
-                          rows="3">{{ $lm->comment }}</textarea>
+                <textarea name="comment" class="form-control" rows="3">{{ $lm->comment }}</textarea>
             </div>
         </div>
 
         <div class="mt-4 text-end">
-            <a href="{{ route('lms.index') }}" class="btn btn-secondary me-2">Cancel</a>
-
-            {{-- ✅ Draft Button --}}
+            <a href="{{ route('admin.lms.index') }}" class="btn btn-secondary me-2">Cancel</a>
             <button type="button" id="draftBtn" class="btn btn-outline-warning me-2">Save as Draft</button>
-
-            {{-- ✅ Update Button --}}
             <button type="button" id="updateBtn" class="btn btn-gold">Update Lead</button>
-
-            {{-- Hidden submit --}}
             <button type="submit" id="submitBtn" hidden></button>
         </div>
     </form>
 </div>
 
-{{-- ✅ Confirm Update Modal --}}
+{{-- Confirm Modal --}}
 <div id="confirmModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:9999;">
@@ -143,45 +129,37 @@
 
 @push('scripts')
 <script>
-// Edit Status Date/Time toggle
 document.getElementById('editStatus').addEventListener('change', function() {
     var show = ['call_back_required', 'call_schedule'].includes(this.value);
     document.getElementById('editDateField').style.display = show ? 'block' : 'none';
     document.getElementById('editTimeField').style.display = show ? 'block' : 'none';
 });
 
-const modal            = document.getElementById('confirmModal');
-const updateBtn        = document.getElementById('updateBtn');
-const draftBtn         = document.getElementById('draftBtn');
-const cancelBtn        = document.getElementById('cancelBtn');
-const confirmBtn       = document.getElementById('confirmBtn');
-const submitBtn        = document.getElementById('submitBtn');
-const discussionField  = document.getElementById('discussionField');
+const modal             = document.getElementById('confirmModal');
+const updateBtn         = document.getElementById('updateBtn');
+const draftBtn          = document.getElementById('draftBtn');
+const cancelBtn         = document.getElementById('cancelBtn');
+const confirmBtn        = document.getElementById('confirmBtn');
+const submitBtn         = document.getElementById('submitBtn');
+const discussionField   = document.getElementById('discussionField');
 const confirmModalTitle = document.getElementById('confirmModalTitle');
 const confirmModalText  = document.getElementById('confirmModalText');
 
-// ✅ Update Lead button click
 updateBtn.addEventListener('click', function() {
-    discussionField.value   = 'update';
+    discussionField.value = 'update';
     confirmModalTitle.textContent = 'Confirm Update';
     confirmModalText.textContent  = 'Do you want to save these changes?';
     modal.style.display = 'flex';
 });
 
-// ✅ Save as Draft button click
 draftBtn.addEventListener('click', function() {
-    discussionField.value   = 'draft';
+    discussionField.value = 'draft';
     confirmModalTitle.textContent = 'Save as Draft';
     confirmModalText.textContent  = 'Do you want to save this lead as Draft?';
     modal.style.display = 'flex';
 });
 
-// Cancel
-cancelBtn.addEventListener('click', function() {
-    modal.style.display = 'none';
-});
-
-// Confirm → form submit
+cancelBtn.addEventListener('click', function() { modal.style.display = 'none'; });
 confirmBtn.addEventListener('click', function() {
     modal.style.display = 'none';
     submitBtn.click();

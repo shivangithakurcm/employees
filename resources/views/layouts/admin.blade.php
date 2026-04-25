@@ -81,8 +81,9 @@
    class="{{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
     <i class="fas fa-users me-2"></i> Employee
 </a>
-   <a href="{{ route('lms.index') }}"
-   class="{{ request()->routeIs('lms.*') ? 'active' : '' }}">
+  {{-- ✅ Sahi --}}
+<a href="{{ route('admin.lms.index') }}"
+   class="{{ request()->routeIs('admin.lms.*') ? 'active' : '' }}">
     <i class="fas fa-chart-line me-2"></i> LMS
 </a>
 </div>

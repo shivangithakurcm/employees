@@ -25,4 +25,9 @@ class Lead extends Model
         'discussion',
         'comment',
     ];
+
+    public function followUps()
+{
+    return $this->hasMany(FollowUp::class);
+}
 }

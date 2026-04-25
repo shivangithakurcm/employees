@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Models\FollowUp;
 use Illuminate\Http\Request;
 
 class LeadApiController extends Controller
 {
-    // ✅ 1. GET ALL LEADS (filters + search + pagination)
+    // ✅ 1. GET ALL LEADS
     public function index(Request $request)
     {
         $query = Lead::query();
@@ -45,196 +46,218 @@ class LeadApiController extends Controller
 
         $leads = $query->latest()->paginate(10);
 
-        $counts = [
-            'all'                => Lead::where(function($q) {
-                                        $q->where('discussion', 'add')->orWhereNull('discussion');
-                                    })->count(),
-            'follow_up'          => Lead::whereIn('status', ['call_back_required', 'call_schedule'])->count(),
-            'qualified'          => Lead::where('status', 'qualified')->count(),
-            'proposal_sent'      => Lead::where('status', 'proposal_sent')->count(),
-            'lost'               => Lead::where('status', 'lost')->count(),
-            'won'                => Lead::where('status', 'won')->count(),
-            'call_back_required' => Lead::where('status', 'call_back_required')->count(),
-            'call_schedule'      => Lead::where('status', 'call_schedule')->count(),
-            'draft'              => Lead::where('discussion', 'draft')->count(),
-        ];
-
-        return response()->json(['status' => true, 'counts' => $counts, 'data' => $leads]);
+        return response()->json(['status' => true, 'data' => $leads]);
     }
 
-    // ✅ 2. GET SINGLE LEAD (V button)
+    // ✅ 2. SHOW
     public function show($id)
     {
         $lead = Lead::find($id);
-        if (!$lead) {
-            return response()->json(['status' => false, 'message' => 'Lead not found'], 404);
-        }
+        if (!$lead) return response()->json(['status' => false, 'message' => 'Not found'], 404);
+
         return response()->json(['status' => true, 'data' => $lead]);
     }
 
-    // ✅ 3. ADD LEAD
+    // ✅ 3. STORE
     public function store(Request $request)
     {
         $request->validate([
-            'first_name'     => 'required|string|max:100',
-            'last_name'      => 'required|string|max:100',
-            'contact_number' => 'required|numeric|digits:10',
-            'email'          => 'nullable|email|unique:leads,email',
-            'status'         => 'required|string',
-            'date'           => 'nullable|date',
-            'time'           => 'nullable',
+            'first_name'     => 'required',
+            'last_name'      => 'required',
+            'contact_number' => 'required|digits:10',
+            'status'         => 'required'
         ]);
 
-        $discussion = $request->input('discussion') === 'draft' ? 'draft' : 'add';
+        $lead = Lead::create($request->all());
 
-        $lead = Lead::create([
-            'first_name'     => $request->first_name,
-            'middle_name'    => $request->middle_name,
-            'last_name'      => $request->last_name,
-            'contact_number' => $request->contact_number,
-            'email'          => $request->email,
-            'state'          => $request->state,
-            'city'           => $request->city,
-            'country'        => $request->country,
-            'Requirement'    => $request->requirement,
-            'date'           => $request->date,
-            'time'           => $request->time,
-            'status'         => $request->status,
-            'comment'        => $request->comment,
-            'discussion'     => $discussion,
-        ]);
-
-        return response()->json(['status' => true, 'message' => 'Lead added successfully', 'data' => $lead], 201);
+        return response()->json(['status' => true, 'data' => $lead]);
     }
 
-    // ✅ 4. UPDATE LEAD (E button)
+    // ✅ 4. UPDATE
     public function update(Request $request, $id)
     {
         $lead = Lead::find($id);
-        if (!$lead) {
-            return response()->json(['status' => false, 'message' => 'Lead not found'], 404);
-        }
+        if (!$lead) return response()->json(['status' => false], 404);
 
-        $request->validate([
-            'first_name'     => 'required|string|max:100',
-            'last_name'      => 'required|string|max:100',
-            'contact_number' => 'required|numeric|digits:10',
-            'email'          => 'nullable|email|unique:leads,email,' . $id,
-            'status'         => 'required|string',
-            'date'           => 'nullable|date',
-            'time'           => 'nullable',
-        ]);
+        $lead->update($request->all());
 
-        $discussion = $request->input('discussion') === 'draft' ? 'draft' : 'add';
-
-        $lead->update([
-            'first_name'     => $request->first_name,
-            'middle_name'    => $request->middle_name,
-            'last_name'      => $request->last_name,
-            'contact_number' => $request->contact_number,
-            'email'          => $request->email,
-            'state'          => $request->state,
-            'city'           => $request->city,
-            'country'        => $request->country,
-            'Requirement'    => $request->requirement,
-            'date'           => $request->date,
-            'time'           => $request->time,
-            'status'         => $request->status,
-            'comment'        => $request->comment,
-            'discussion'     => $discussion,
-        ]);
-
-        return response()->json(['status' => true, 'message' => 'Lead updated successfully', 'data' => $lead]);
+        return response()->json(['status' => true, 'data' => $lead]);
     }
 
-    // ✅ 5. ACTION + STATUS UPDATE (A button — saare statuses ek jagah)
+    // ✅ 5. MAIN ACTION LOGIC
     public function action(Request $request, $id)
-{
-    try {
+    {
         $lead = Lead::find($id);
+        if (!$lead) return response()->json(['status' => false], 404);
 
-        if (!$lead) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lead not found',
-                'data' => null
-            ], 404);
-        }
-
-        $validated = $request->validate([
-            'action_type' => 'required|in:lost,qualified,reschedule,call_schedule,call_back_required,not_interested,not_responded,not_in_scope,proposal_sent,won',
-            'comment'     => 'required|string',
-            'date'        => 'nullable|date|required_if:action_type,reschedule,call_schedule,call_back_required',
-            'time'        => 'nullable|required_if:action_type,reschedule,call_schedule,call_back_required',
+        $request->validate([
+            'action_type' => 'required',
+            'comment'     => 'required'
         ]);
 
-        switch ($validated['action_type']) {
-
-            case 'reschedule':
-            case 'call_back_required':
-                $lead->status = 'call_back_required';
-                $lead->date   = $validated['date'];
-                $lead->time   = $validated['time'];
-                break;
+        switch ($request->action_type) {
 
             case 'call_schedule':
                 $lead->status = 'call_schedule';
-                $lead->date   = $validated['date'];
-                $lead->time   = $validated['time'];
+                $lead->date   = $request->date;
+                $lead->time   = $request->time;
+                break;
+
+            case 'call_back_required':
+            case 'reschedule':
+                $lead->status = 'call_back_required';
+                $lead->date   = $request->date;
+                $lead->time   = $request->time;
                 break;
 
             default:
-                $lead->status = $validated['action_type'];
+                $lead->status = $request->action_type;
                 $lead->date   = null;
                 $lead->time   = null;
-                break;
         }
 
-        $lead->comment = $validated['comment'];
+        $lead->comment = $request->comment;
         $lead->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Action updated successfully',
-            'data' => [
-                'id'      => $lead->id,
-                'status'  => $lead->status,
-                'date'    => $lead->date,
-                'time'    => $lead->time,
-                'comment' => $lead->comment,
-            ]
-        ], 200);
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors'  => $e->errors()
-        ], 422);
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Something went wrong',
-            'error'   => $e->getMessage()
-        ], 500);
+        return response()->json(['status' => true, 'data' => $lead]);
     }
-}
 
-    // ✅ 6. SINGLE DELETE (D button)
-    public function destroy($id)
+    // 🔥 COMMON HANDLER
+    private function handleAction($id, $action, Request $request)
+    {
+        $request->merge(['action_type' => $action]);
+        return $this->action($request, $id);
+    }
+
+    // ✅ SEPARATE APIs
+    public function callSchedule(Request $request, $id)
+    {
+        return $this->handleAction($id, 'call_schedule', $request);
+    }
+
+    public function callBackRequired(Request $request, $id)
+    {
+        return $this->handleAction($id, 'call_back_required', $request);
+    }
+
+    public function qualified(Request $request, $id)
+    {
+        return $this->handleAction($id, 'qualified', $request);
+    }
+
+    public function proposalSent(Request $request, $id)
+    {
+        return $this->handleAction($id, 'proposal_sent', $request);
+    }
+
+    public function won(Request $request, $id)
+    {
+        return $this->handleAction($id, 'won', $request);
+    }
+
+    public function lost(Request $request, $id)
+    {
+        return $this->handleAction($id, 'lost', $request);
+    }
+
+    public function draft(Request $request, $id)
     {
         $lead = Lead::find($id);
-        if (!$lead) {
-            return response()->json(['status' => false, 'message' => 'Lead not found'], 404);
-        }
-        $lead->delete();
-        return response()->json(['status' => true, 'message' => 'Lead deleted successfully']);
+        if (!$lead) return response()->json(['status' => false], 404);
+
+        $lead->discussion = 'draft';
+        $lead->save();
+
+        return response()->json(['status' => true, 'data' => $lead]);
     }
 
-    // ✅ 7. BULK DELETE
+    // ✅ Sab leads ke saare follow-ups
+    public function getAllFollowUps()
+    {
+        $followUps = FollowUp::with('lead')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+        return response()->json([
+            'success'    => true,
+            'total'      => $followUps->count(),
+            'follow_ups' => $followUps,
+        ]);
+    }
+
+    // ✅ Ek lead ke follow-ups dikhao
+   public function getFollowUps($id)
+{
+    $lead = Lead::with('followUps')->findOrFail($id);
+
+    return response()->json([
+        'success'    => true,
+
+        // ✅ Lead ka pura data
+        'lead' => [
+            'id'             => $lead->id,
+            'first_name'     => $lead->first_name,
+            'last_name'      => $lead->last_name,
+            'full_name'      => $lead->first_name . ' ' . $lead->last_name,
+            'contact_number' => $lead->contact_number,
+            'email'          => $lead->email,
+            'city'           => $lead->city,
+            'state'          => $lead->state,
+            'country'        => $lead->country,
+            'requirement'    => $lead->requirement,
+            'comment'        => $lead->comment,
+            'date'           => $lead->date,
+            'time'           => $lead->time,
+            'current_status' => $lead->status,
+            'discussion'     => $lead->discussion,
+            'created_at'     => $lead->created_at->format('d-m-Y'),
+        ],
+
+        // ✅ Follow-ups ki history
+        'total'      => $lead->followUps->count(),
+        'follow_ups' => $lead->followUps()
+                            ->orderBy('created_at', 'desc')
+                            ->get(),
+    ]);
+}
+    // ✅ Naya follow-up create karo
+    public function followUp(Request $request, $id)
+    {
+        $lead = Lead::findOrFail($id);
+
+        $validated = $request->validate([
+            'comment' => 'nullable|string',
+            'status'  => 'required|in:call_back_received,call_schedule,not_interested,not_responded,not_in_scope,follow_up,qualified,proposal_sent,lost,won',
+            'date'    => 'nullable|date',
+            'time'    => 'nullable|date_format:H:i',
+        ]);
+
+        $lead->update(['status' => $validated['status']]);
+
+        $followUp = $lead->followUps()->create($validated);
+
+        return response()->json([
+            'success'   => true,
+            'message'   => 'Follow-up saved successfully!',
+            'follow_up' => $followUp,
+        ], 201);
+    }
+
+    // ✅ UPDATE MULTIPLE
+    public function updateMultiple(Request $request)
+    {
+        $request->validate([
+            'ids'    => 'required|array',
+            'ids.*'  => 'integer|exists:leads,id',
+            'status' => 'required|string',
+        ]);
+
+        Lead::whereIn('id', $request->ids)->update(['status' => $request->status]);
+
+        return response()->json(['status' => true, 'message' => 'Leads updated successfully']);
+    }
+
+    // ✅ DELETE MULTIPLE
     public function destroyMultiple(Request $request)
     {
         $request->validate([
@@ -242,22 +265,30 @@ class LeadApiController extends Controller
             'ids.*' => 'integer|exists:leads,id',
         ]);
 
-        $deleted = Lead::whereIn('id', $request->ids)->delete();
-        return response()->json(['status' => true, 'message' => $deleted . ' lead(s) deleted successfully']);
+        Lead::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['status' => true, 'message' => 'Leads deleted successfully']);
     }
+    public function getCounts()
+{
+    return response()->json([
+        'status' => true,
+        'counts' => [
+            'all'                => Lead::where(function($q) {
+                                        $q->where('discussion', 'add')
+                                          ->orWhereNull('discussion');
+                                    })->count(),
+            'follow_up'          => Lead::whereIn('status', ['call_back_required', 'call_schedule'])->count(),
+            'call_back_required' => Lead::where('status', 'call_back_required')->count(),
+            'call_schedule'      => Lead::where('status', 'call_schedule')->count(),
+            'qualified'          => Lead::where('status', 'qualified')->count(),
+            'proposal_sent'      => Lead::where('status', 'proposal_sent')->count(),
+            'lost'               => Lead::where('status', 'lost')->count(),
+            'won'                => Lead::where('status', 'won')->count(),
+            'draft'              => Lead::where('discussion', 'draft')->count(),
+        ]
+    ]);
+}
 
-    // ✅ 8. BULK UPDATE
-    public function updateMultiple(Request $request)
-    {
-        if (!$request->leads || !is_array($request->leads)) {
-            return response()->json(['status' => false, 'message' => 'leads array required'], 422);
-        }
 
-        foreach ($request->leads as $leadData) {
-            $lead = Lead::find($leadData['id'] ?? null);
-            if ($lead) $lead->update($leadData);
-        }
-
-        return response()->json(['status' => true, 'message' => 'Leads updated successfully']);
-    }
 }

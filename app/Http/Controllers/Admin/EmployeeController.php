@@ -12,23 +12,30 @@ class EmployeeController extends Controller
 {
     // Employee List
     public function index(Request $request)
-    {
-        $query = Employee::query();
+{
+    $query = Employee::query();
 
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
-
-        $employees = $query->latest()->paginate(10);
-        return view('admin.employees.index', compact('employees'));
+    // ✅ Search fix - closure mein wrap karo
+    if ($request->filled('search')) {
+        $query->where(function($q) use ($request) {
+            $q->where('name', 'like', '%' . $request->search . '%')
+              ->orWhere('email', 'like', '%' . $request->search . '%')
+              ->orWhere('contact', 'like', '%' . $request->search . '%');
+        });
     }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('date')) {
+        $query->whereDate('created_at', $request->date);
+    }
+
+    $employees = $query->latest()->paginate(10);
+
+    return view('admin.employees.index', compact('employees'));
+}
 
     // Step 1 - Basic Info
     public function create()
