@@ -27,7 +27,12 @@ class Lead extends Model
     ];
 
     public function followUps()
+    {
+        return $this->hasMany(FollowUp::class);
+    }
+
+   public function histories()
 {
-    return $this->hasMany(FollowUp::class);
+    return $this->hasMany(LeadHistory::class);
 }
 }

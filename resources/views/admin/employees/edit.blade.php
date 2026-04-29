@@ -1,128 +1,107 @@
 @extends('layouts.admin')
-@section('page-title', 'Edit Lead')
+@section('page-title', 'Edit Employee')
 @section('content')
 
 <div class="d-flex justify-content-between mb-4">
-    <a href="{{ route('lms.show', $lm->id) }}"
+    <a href="{{ route('admin.employees.show', $employee->id) }}"
        style="color:#f0c040; text-decoration:none; font-size:1.1rem;">← Back</a>
-    <h4 style="color:#f0c040">Edit Lead</h4>
+    <h4 style="color:#f0c040">Edit Employee</h4>
 </div>
 
 <div class="card-dark">
-    <form action="{{ route('lms.update', $lm->id) }}" method="POST">
+    <form action="{{ route('admin.employees.update', $employee->id) }}" method="POST">
         @csrf
         @method('PUT')
-        <input type="hidden" name="discussion" id="discussionField" value="{{ $lm->discussion ?? 'add' }}">
 
         <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">First Name *</label>
-                <input type="text" name="first_name" class="form-control"
-                       value="{{ $lm->first_name }}" required>
+                <label class="form-label">Name *</label>
+                <input type="text" name="name" class="form-control"
+                       value="{{ $employee->name }}" required>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Middle Name</label>
-                <input type="text" name="middle_name" class="form-control"
-                       value="{{ $lm->middle_name }}">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Last Name *</label>
-                <input type="text" name="last_name" class="form-control"
-                       value="{{ $lm->last_name }}" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Contact Number *</label>
-                <input type="tel" name="contact_number" class="form-control"
-                       maxlength="10" value="{{ $lm->contact_number }}" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Email</label>
+                <label class="form-label">Email *</label>
                 <input type="email" name="email" class="form-control"
-                       value="{{ $lm->email }}">
+                       value="{{ $employee->email }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Contact *</label>
+                <input type="tel" name="contact" class="form-control"
+                       maxlength="10" value="{{ $employee->contact }}" required>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Address</label>
+                <input type="text" name="address" class="form-control"
+                       value="{{ $employee->address }}">
             </div>
             <div class="col-md-4">
                 <label class="form-label">State</label>
                 <select name="state" class="form-select">
                     <option value="">— Select State —</option>
                     @foreach(['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Jammu & Kashmir','Ladakh','Chandigarh','Puducherry'] as $st)
-                        <option value="{{ $st }}" {{ $lm->state == $st ? 'selected' : '' }}>{{ $st }}</option>
+                        <option value="{{ $st }}" {{ $employee->state == $st ? 'selected' : '' }}>{{ $st }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label">City</label>
                 <input type="text" name="city" class="form-control"
-                       value="{{ $lm->city }}">
+                       value="{{ $employee->city }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label">Country</label>
-                <input type="text" name="country" class="form-control"
-                       value="{{ $lm->country }}">
+                <label class="form-label">Pincode</label>
+                <input type="text" name="pincode" class="form-control"
+                       value="{{ $employee->pincode }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label">Status *</label>
-                <select name="status" class="form-select" id="editStatus" required>
+                <label class="form-label">Date of Birth</label>
+                <input type="date" name="date_of_birth" class="form-control"
+                       value="{{ $employee->date_of_birth }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Marital Status</label>
+                <select name="marital_status" class="form-select">
                     <option value="">— Select —</option>
-                    @foreach([
-                        'call_back_required' => 'Call Back Required',
-                        'call_schedule'      => 'Call Schedule',
-                        'not_interested'     => 'Not Interested',
-                        'not_responded'      => 'Not Responded',
-                        'not_in_scope'       => 'Not In Scope',
-                        'qualified'          => 'Qualified',
-                        'proposal_sent'      => 'Proposal Sent',
-                        'lost'               => 'Lost',
-                        'won'                => 'Won',
-                    ] as $val => $label)
-                        <option value="{{ $val }}" {{ $lm->status == $val ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
+                    <option value="single"   {{ $employee->marital_status == 'single'   ? 'selected' : '' }}>Single</option>
+                    <option value="married"  {{ $employee->marital_status == 'married'  ? 'selected' : '' }}>Married</option>
+                    <option value="divorced" {{ $employee->marital_status == 'divorced' ? 'selected' : '' }}>Divorced</option>
+                    <option value="widowed"  {{ $employee->marital_status == 'widowed'  ? 'selected' : '' }}>Widowed</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Blood Group</label>
+                <select name="blood_group" class="form-select">
+                    <option value="">— Select —</option>
+                    @foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bg)
+                        <option value="{{ $bg }}" {{ $employee->blood_group == $bg ? 'selected' : '' }}>{{ $bg }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-4" id="editDateField"
-                 style="{{ in_array($lm->status, ['call_back_required','call_schedule']) ? '' : 'display:none;' }}">
-                <label class="form-label">Date</label>
-                <input type="date" name="date" class="form-control"
-                       value="{{ $lm->date }}">
-            </div>
-            <div class="col-md-4" id="editTimeField"
-                 style="{{ in_array($lm->status, ['call_back_required','call_schedule']) ? '' : 'display:none;' }}">
-                <label class="form-label">Time</label>
-                <input type="time" name="time" class="form-control"
-                       value="{{ $lm->time }}">
-            </div>
-            <div class="col-md-8">
-                <label class="form-label">Requirement</label>
-                <input type="text" name="requirement" class="form-control"
-                       value="{{ $lm->Requirement }}">
-            </div>
-            <div class="col-12">
-                <label class="form-label">Comment</label>
-                <textarea name="comment" class="form-control"
-                          rows="3">{{ $lm->comment }}</textarea>
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="active"   {{ $employee->status == 'active'   ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ $employee->status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                </select>
             </div>
         </div>
 
         <div class="mt-4 text-end">
-            <a href="{{ route('lms.index') }}" class="btn btn-secondary me-2">Cancel</a>
-            {{-- ✅ Draft button --}}
-            <button type="button" id="draftBtn" class="btn btn-outline-warning me-2">Save as Draft</button>
-            {{-- ✅ Update button --}}
-            <button type="button" id="updateBtn" class="btn btn-gold">Update Lead</button>
+            <a href="{{ route('admin.employees.show', $employee->id) }}" class="btn btn-secondary me-2">Cancel</a>
+            <button type="button" id="updateBtn" class="btn btn-gold">Update Employee</button>
             <button type="submit" id="submitBtn" hidden></button>
         </div>
     </form>
 </div>
 
-{{-- ✅ Confirm Popup --}}
+{{-- Confirm Popup --}}
 <div id="confirmModal"
      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:999999;">
     <div style="background:#1e1e1e; padding:25px; border-radius:10px;
                 width:350px; text-align:center; border:1px solid #f0c040;">
-        <h5 style="color:#f0c040; margin-bottom:15px;" id="popupTitle">Confirm Update</h5>
-        <p style="color:#fff;" id="popupMsg">Do you want to save these changes?</p>
+        <h5 style="color:#f0c040; margin-bottom:15px;">Confirm Update</h5>
+        <p style="color:#fff;">Do you want to save these changes?</p>
         <div class="mt-3 d-flex justify-content-center gap-2">
             <button id="cancelBtn" class="btn btn-secondary btn-sm">Cancel</button>
             <button id="confirmBtn" class="btn btn-gold btn-sm">Yes, Save</button>
@@ -134,47 +113,21 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-
-    // ✅ Status change pe Date/Time show hide
-    document.getElementById('editStatus').addEventListener('change', function() {
-        var show = ['call_back_required', 'call_schedule'].includes(this.value);
-        document.getElementById('editDateField').style.display = show ? 'block' : 'none';
-        document.getElementById('editTimeField').style.display = show ? 'block' : 'none';
-    });
-
+document.addEventListener('DOMContentLoaded', function () {
     const confirmModal = document.getElementById('confirmModal');
-    const cancelBtn    = document.getElementById('cancelBtn');
-    const confirmBtn   = document.getElementById('confirmBtn');
-    const submitBtn    = document.getElementById('submitBtn');
-    const popupTitle   = document.getElementById('popupTitle');
-    const popupMsg     = document.getElementById('popupMsg');
 
-    // ✅ Update button
-    document.getElementById('updateBtn').addEventListener('click', function() {
-        document.getElementById('discussionField').value = 'add';
-        popupTitle.innerText = 'Confirm Update';
-        popupMsg.innerText   = 'Do you want to save these changes?';
+    document.getElementById('updateBtn').addEventListener('click', function () {
         confirmModal.style.display = 'flex';
     });
 
-    // ✅ Draft button
-    document.getElementById('draftBtn').addEventListener('click', function() {
-        document.getElementById('discussionField').value = 'draft';
-        popupTitle.innerText = 'Save as Draft';
-        popupMsg.innerText   = 'Do you want to save this as draft?';
-        confirmModal.style.display = 'flex';
-    });
-
-    cancelBtn.addEventListener('click', function() {
+    document.getElementById('cancelBtn').addEventListener('click', function () {
         confirmModal.style.display = 'none';
     });
 
-    confirmBtn.addEventListener('click', function() {
+    document.getElementById('confirmBtn').addEventListener('click', function () {
         confirmModal.style.display = 'none';
-        submitBtn.click();
+        document.getElementById('submitBtn').click();
     });
-
 });
 </script>
 @endpush

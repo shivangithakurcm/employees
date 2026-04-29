@@ -220,17 +220,18 @@ class EmployeeController extends Controller
     }
 
     // Edit Employee
-    public function edit($id)
-    {
-        $employee = Employee::with([
-            'qualifications',
-            'previousEmployers',
-            'bankDetails',
-            'officialDetail'
-        ])->findOrFail($id);
+   // Edit Employee
+public function edit($id)
+{
+    $employee = Employee::with([   
+        'qualifications',
+        'previousEmployers',
+        'bankDetails',
+        'officialDetail'
+    ])->findOrFail($id);
 
-        return view('admin.employees.edit', compact('employee'));
-    }
+    return view('admin.employees.edit', compact('employee')); // ✅ $employee
+}
 
     public function update(Request $request, $id)
 {

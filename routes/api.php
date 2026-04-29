@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leads',                        [LeadApiController::class, 'store']);
     Route::get('/leads/counts',                  [LeadApiController::class, 'getCounts']);
     Route::get('/leads/search',                  [LeadApiController::class, 'search']);
+    Route::get('/leads/all-history',             [LeadApiController::class, 'allHistory']); // ✅ {id} se pehle
     Route::post('/leads/update-multiple',        [LeadApiController::class, 'updateMultiple']);
     Route::delete('/leads/destroy-multiple',     [LeadApiController::class, 'destroyMultiple']);
     Route::get('/follow-ups',                    [LeadApiController::class, 'getAllFollowUps']);
@@ -49,4 +50,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leads/{id}/won',               [LeadApiController::class, 'won']);
     Route::post('/leads/{id}/lost',              [LeadApiController::class, 'lost']);
     Route::post('/leads/{id}/draft',             [LeadApiController::class, 'draft']);
+    Route::get('/leads/{id}/history',            [LeadApiController::class, 'history']); // ✅ particular lead history
 });

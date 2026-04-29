@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Models\LeadHistory;
 use App\Models\FollowUp;
 use Illuminate\Http\Request;
 
@@ -51,35 +52,61 @@ class LeadApiController extends Controller
 
     // ✅ 2. SHOW
     public function show($id)
-    {
-        $lead = Lead::find($id);
-        if (!$lead) return response()->json(['status' => false, 'message' => 'Not found'], 404);
+{
+    $lead = Lead::with('histories')->find($id);
 
-        return response()->json(['status' => true, 'data' => $lead]);
+    if (!$lead) {
+        return response()->json(['status' => false], 404);
     }
+
+    return response()->json(['status' => true, 'data' => $lead]);
+}
 
     // ✅ 3. STORE
-    public function store(Request $request)
-    {
-        $request->validate([
-            'first_name'     => 'required',
-            'last_name'      => 'required',
-            'contact_number' => 'required|digits:10',
-            'status'         => 'required'
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'first_name'     => 'required',
+        'last_name'      => 'required',
+        'contact_number' => 'required|digits:10',
+        'status'         => 'required'
+    ]);
 
-        $lead = Lead::create($request->all());
+    $lead = Lead::create($request->all());
 
-        return response()->json(['status' => true, 'data' => $lead]);
-    }
+    // 🔥 Force history insert (no risky fields)
+    LeadHistory::create([
+        'lead_id'    => $lead->id,
+        'event_type' => 'created',
+        'to_status'  => $lead->status,
+    ]);
 
+    return response()->json([
+        'status' => true,
+        'data'   => $lead
+    ]);
+}
     // ✅ 4. UPDATE
     public function update(Request $request, $id)
     {
         $lead = Lead::find($id);
         if (!$lead) return response()->json(['status' => false], 404);
 
+        $oldStatus = $lead->status;
+
         $lead->update($request->all());
+
+        // ✅ History save — lead edited
+        LeadHistory::create([
+            'lead_id'     => $lead->id,
+            'event_type'  => 'edited',
+            'from_status' => $oldStatus,
+            'to_status'   => $lead->status,
+            'date'        => $lead->date,
+            'time'        => $lead->time,
+            'comment'     => $lead->comment,
+            'document'    => null,
+        ]);
 
         return response()->json(['status' => true, 'data' => $lead]);
     }
@@ -94,6 +121,9 @@ class LeadApiController extends Controller
             'action_type' => 'required',
             'comment'     => 'required'
         ]);
+
+        $oldStatus    = $lead->status;
+        $proposalPath = null;
 
         switch ($request->action_type) {
 
@@ -110,6 +140,23 @@ class LeadApiController extends Controller
                 $lead->time   = $request->time;
                 break;
 
+            case 'lost':
+                $lead->status = 'lost';
+                $lead->date   = $request->date;
+                $lead->time   = $request->time;
+                break;
+
+            case 'proposal_sent':
+                $lead->status = 'proposal_sent';
+                $lead->date   = $request->date;
+                $lead->time   = $request->time;
+                // ✅ Proposal file upload
+                if ($request->hasFile('proposal')) {
+                    $proposalPath  = $request->file('proposal')->store('proposals', 'public');
+                    $lead->proposal = $proposalPath;
+                }
+                break;
+
             default:
                 $lead->status = $request->action_type;
                 $lead->date   = null;
@@ -118,6 +165,20 @@ class LeadApiController extends Controller
 
         $lead->comment = $request->comment;
         $lead->save();
+
+        // ✅ History save — status changed
+        LeadHistory::create([
+            'lead_id'     => $lead->id,
+            'event_type'  => 'status_changed',
+            'from_status' => $oldStatus,
+            'to_status'   => $lead->status,
+            'date'        => $request->date,
+            'time'        => $request->time,
+            'comment'     => $request->comment,
+            'document'    => $proposalPath
+                                ? asset('storage/' . $proposalPath)
+                                : null,
+        ]);
 
         return response()->json(['status' => true, 'data' => $lead]);
     }
@@ -129,7 +190,8 @@ class LeadApiController extends Controller
         return $this->action($request, $id);
     }
 
-    // ✅ SEPARATE APIs
+    // ✅ SEPARATE APIs — sab handleAction se jaate hain
+    // isliye unme bhi history automatic save hogi
     public function callSchedule(Request $request, $id)
     {
         return $this->handleAction($id, 'call_schedule', $request);
@@ -165,8 +227,21 @@ class LeadApiController extends Controller
         $lead = Lead::find($id);
         if (!$lead) return response()->json(['status' => false], 404);
 
+        $oldStatus        = $lead->status;
         $lead->discussion = 'draft';
         $lead->save();
+
+        // ✅ History save
+        LeadHistory::create([
+            'lead_id'     => $lead->id,
+            'event_type'  => 'status_changed',
+            'from_status' => $oldStatus,
+            'to_status'   => 'draft',
+            'date'        => null,
+            'time'        => null,
+            'comment'     => 'Saved as draft',
+            'document'    => null,
+        ]);
 
         return response()->json(['status' => true, 'data' => $lead]);
     }
@@ -186,40 +261,37 @@ class LeadApiController extends Controller
     }
 
     // ✅ Ek lead ke follow-ups dikhao
-   public function getFollowUps($id)
-{
-    $lead = Lead::with('followUps')->findOrFail($id);
+    public function getFollowUps($id)
+    {
+        $lead = Lead::with('followUps')->findOrFail($id);
 
-    return response()->json([
-        'success'    => true,
+        return response()->json([
+            'success'  => true,
+            'lead'     => [
+                'id'             => $lead->id,
+                'first_name'     => $lead->first_name,
+                'last_name'      => $lead->last_name,
+                'full_name'      => $lead->first_name . ' ' . $lead->last_name,
+                'contact_number' => $lead->contact_number,
+                'email'          => $lead->email,
+                'city'           => $lead->city,
+                'state'          => $lead->state,
+                'country'        => $lead->country,
+                'requirement'    => $lead->requirement,
+                'comment'        => $lead->comment,
+                'date'           => $lead->date,
+                'time'           => $lead->time,
+                'current_status' => $lead->status,
+                'discussion'     => $lead->discussion,
+                'created_at'     => $lead->created_at->format('d-m-Y'),
+            ],
+            'total'      => $lead->followUps->count(),
+            'follow_ups' => $lead->followUps()
+                                ->orderBy('created_at', 'desc')
+                                ->get(),
+        ]);
+    }
 
-        // ✅ Lead ka pura data
-        'lead' => [
-            'id'             => $lead->id,
-            'first_name'     => $lead->first_name,
-            'last_name'      => $lead->last_name,
-            'full_name'      => $lead->first_name . ' ' . $lead->last_name,
-            'contact_number' => $lead->contact_number,
-            'email'          => $lead->email,
-            'city'           => $lead->city,
-            'state'          => $lead->state,
-            'country'        => $lead->country,
-            'requirement'    => $lead->requirement,
-            'comment'        => $lead->comment,
-            'date'           => $lead->date,
-            'time'           => $lead->time,
-            'current_status' => $lead->status,
-            'discussion'     => $lead->discussion,
-            'created_at'     => $lead->created_at->format('d-m-Y'),
-        ],
-
-        // ✅ Follow-ups ki history
-        'total'      => $lead->followUps->count(),
-        'follow_ups' => $lead->followUps()
-                            ->orderBy('created_at', 'desc')
-                            ->get(),
-    ]);
-}
     // ✅ Naya follow-up create karo
     public function followUp(Request $request, $id)
     {
@@ -232,9 +304,21 @@ class LeadApiController extends Controller
             'time'    => 'nullable|date_format:H:i',
         ]);
 
+        $oldStatus = $lead->status;
         $lead->update(['status' => $validated['status']]);
-
         $followUp = $lead->followUps()->create($validated);
+
+        // ✅ History save
+        LeadHistory::create([
+            'lead_id'     => $lead->id,
+            'event_type'  => 'status_changed',
+            'from_status' => $oldStatus,
+            'to_status'   => $validated['status'],
+            'date'        => $validated['date']    ?? null,
+            'time'        => $validated['time']    ?? null,
+            'comment'     => $validated['comment'] ?? null,
+            'document'    => null,
+        ]);
 
         return response()->json([
             'success'   => true,
@@ -269,26 +353,127 @@ class LeadApiController extends Controller
 
         return response()->json(['status' => true, 'message' => 'Leads deleted successfully']);
     }
+
+    // ✅ GET COUNTS
     public function getCounts()
-{
-    return response()->json([
-        'status' => true,
-        'counts' => [
-            'all'                => Lead::where(function($q) {
-                                        $q->where('discussion', 'add')
-                                          ->orWhereNull('discussion');
-                                    })->count(),
-            'follow_up'          => Lead::whereIn('status', ['call_back_required', 'call_schedule'])->count(),
-            'call_back_required' => Lead::where('status', 'call_back_required')->count(),
-            'call_schedule'      => Lead::where('status', 'call_schedule')->count(),
-            'qualified'          => Lead::where('status', 'qualified')->count(),
-            'proposal_sent'      => Lead::where('status', 'proposal_sent')->count(),
-            'lost'               => Lead::where('status', 'lost')->count(),
-            'won'                => Lead::where('status', 'won')->count(),
-            'draft'              => Lead::where('discussion', 'draft')->count(),
-        ]
-    ]);
-}
+    {
+        return response()->json([
+            'status' => true,
+            'counts' => [
+                'all'                => Lead::where(function($q) {
+                                            $q->where('discussion', 'add')
+                                              ->orWhereNull('discussion');
+                                        })->count(),
+                'follow_up'          => Lead::whereIn('status', ['call_back_required', 'call_schedule'])->count(),
+                'call_back_required' => Lead::where('status', 'call_back_required')->count(),
+                'call_schedule'      => Lead::where('status', 'call_schedule')->count(),
+                'qualified'          => Lead::where('status', 'qualified')->count(),
+                'proposal_sent'      => Lead::where('status', 'proposal_sent')->count(),
+                'lost'               => Lead::where('status', 'lost')->count(),
+                'won'                => Lead::where('status', 'won')->count(),
+                'draft'              => Lead::where('discussion', 'draft')->count(),
+            ]
+        ]);
+    }
 
+    // ✅ SEARCH
+    public function search(Request $request)
+    {
+        $query = Lead::query();
 
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('first_name', 'like', '%'.$request->search.'%')
+                  ->orWhere('last_name', 'like', '%'.$request->search.'%')
+                  ->orWhere('contact_number', 'like', '%'.$request->search.'%')
+                  ->orWhere('email', 'like', '%'.$request->search.'%');
+            });
+        }
+
+        if ($request->filled('status')) $query->where('status', $request->status);
+        if ($request->filled('state'))  $query->where('state', $request->state);
+        if ($request->filled('city'))   $query->where('city', 'like', '%'.$request->city.'%');
+        if ($request->filled('date'))   $query->whereDate('created_at', $request->date);
+
+        $leads = $query->latest()->paginate(10);
+
+        return response()->json(['status' => true, 'data' => $leads]);
+    }
+
+    // ✅ GET LEAD DETAIL
+    public function getLeadDetail($id)
+    {
+        $lead = Lead::with(['histories'])->find($id);
+        if (!$lead) return response()->json(['status' => false, 'message' => 'Not found'], 404);
+
+        return response()->json(['status' => true, 'data' => $lead]);
+    }
+
+    // ─── Sab leads ki history ek saath ───────────────────────────
+    public function allHistory(Request $request)
+    {
+        $query = LeadHistory::with('lead')
+                            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('lead_id'))    $query->where('lead_id', $request->lead_id);
+        if ($request->filled('event_type')) $query->where('event_type', $request->event_type);
+        if ($request->filled('status'))     $query->where('to_status', $request->status);
+        if ($request->filled('date'))       $query->whereDate('created_at', $request->date);
+
+        $history = $query->paginate(20);
+
+        return response()->json([
+            'status'       => true,
+            'history' => $history->getCollection()->map(function($item) {
+                return [
+                    'id'          => $item->id,
+                    'lead_id'     => $item->lead_id,
+                    'lead_name'   => $item->lead
+                                        ? $item->lead->first_name . ' ' . $item->lead->last_name
+                                        : '-',
+                    'event_type'  => $item->event_type,
+                    'from_status' => $item->from_status,
+                    'to_status'   => $item->to_status,
+                    'date'        => $item->date,
+                    'time'        => $item->time,
+                    'comment'     => $item->comment,
+                    'document'    => $item->document,
+                    'created_at'  => $item->created_at->format('Y-m-d H:i:s'),
+                ];
+            }),
+            'total'        => $history->total(),
+            'current_page' => $history->currentPage(),
+            'last_page'    => $history->lastPage(),
+        ]);
+    }
+
+    // ─── Ek lead ki history ──────────────────────────────────────
+    public function history($id)
+    {
+        $lead = Lead::findOrFail($id);
+
+        $history = $lead->histories()
+     ->orderBy('created_at', 'desc')  // ✅ yahan lagao
+     ->get()
+                        ->map(function($item) {
+                            return [
+                                'id'          => $item->id,
+                                'event_type'  => $item->event_type,
+                                'from_status' => $item->from_status,
+                                'to_status'   => $item->to_status,
+                                'date'        => $item->date,
+                                'time'        => $item->time,
+                                'comment'     => $item->comment,
+                                'document'    => $item->document,
+                                'created_at'  => $item->created_at->format('Y-m-d H:i:s'),
+                            ];
+                        });
+
+        return response()->json([
+            'status'    => true,
+            'lead_id'   => $lead->id,
+            'lead_name' => $lead->first_name . ' ' . $lead->last_name,
+            'history'   => $history,
+        ]);
+    }
 }

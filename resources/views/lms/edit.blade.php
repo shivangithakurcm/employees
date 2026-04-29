@@ -3,8 +3,8 @@
 @section('content')
 
 <div class="d-flex justify-content-between mb-4">
-    <a href="{{ route('admin.lms.show', $lm->id) }}"
-       style="color:#f0c040; text-decoration:none; font-size:1.1rem;">← Back</a>
+    <a href="javascript:history.back()"
+   style="color:#f0c040; text-decoration:none; font-size:1.1rem;">← Back</a>
     <h4 style="color:#f0c040">Edit Lead</h4>
 </div>
 
@@ -58,20 +58,18 @@
                 <label class="form-label">Country</label>
                 <input type="text" name="country" class="form-control" value="{{ $lm->country }}">
             </div>
+
+            {{-- Sirf 5 options --}}
             <div class="col-md-4">
                 <label class="form-label">Status *</label>
                 <select name="status" class="form-select" id="editStatus" required>
                     <option value="">— Select —</option>
                     @foreach([
                         'call_back_required' => 'Call Back Required',
+                        'not_responded'      => 'Not Responded',
                         'call_schedule'      => 'Call Schedule',
                         'not_interested'     => 'Not Interested',
-                        'not_responded'      => 'Not Responded',
                         'not_in_scope'       => 'Not In Scope',
-                        'qualified'          => 'Qualified',
-                        'proposal_sent'      => 'Proposal Sent',
-                        'lost'               => 'Lost',
-                        'won'                => 'Won',
                     ] as $val => $label)
                         <option value="{{ $val }}" {{ $lm->status == $val ? 'selected' : '' }}>
                             {{ $label }}
@@ -80,13 +78,14 @@
                 </select>
             </div>
 
+            {{-- Date/Time: call_back_required, call_schedule, not_responded pe show hoga --}}
             <div class="col-md-4" id="editDateField"
-                 style="{{ in_array($lm->status, ['call_back_required','call_schedule']) ? '' : 'display:none;' }}">
+                 style="{{ in_array($lm->status, ['call_back_required','call_schedule','not_responded']) ? '' : 'display:none;' }}">
                 <label class="form-label">Date</label>
                 <input type="date" name="date" class="form-control" value="{{ $lm->date }}">
             </div>
             <div class="col-md-4" id="editTimeField"
-                 style="{{ in_array($lm->status, ['call_back_required','call_schedule']) ? '' : 'display:none;' }}">
+                 style="{{ in_array($lm->status, ['call_back_required','call_schedule','not_responded']) ? '' : 'display:none;' }}">
                 <label class="form-label">Time</label>
                 <input type="time" name="time" class="form-control" value="{{ $lm->time }}">
             </div>
@@ -100,9 +99,10 @@
                 <textarea name="comment" class="form-control" rows="3">{{ $lm->comment }}</textarea>
             </div>
         </div>
+        
 
         <div class="mt-4 text-end">
-            <a href="{{ route('admin.lms.index') }}" class="btn btn-secondary me-2">Cancel</a>
+            <a href="{{ route('admin.lms.show', $lm->id) }}" class="btn btn-secondary me-2">Cancel</a>
             <button type="button" id="draftBtn" class="btn btn-outline-warning me-2">Save as Draft</button>
             <button type="button" id="updateBtn" class="btn btn-gold">Update Lead</button>
             <button type="submit" id="submitBtn" hidden></button>
@@ -130,7 +130,7 @@
 @push('scripts')
 <script>
 document.getElementById('editStatus').addEventListener('change', function() {
-    var show = ['call_back_required', 'call_schedule'].includes(this.value);
+    var show = ['call_back_required', 'call_schedule', 'not_responded'].includes(this.value);
     document.getElementById('editDateField').style.display = show ? 'block' : 'none';
     document.getElementById('editTimeField').style.display = show ? 'block' : 'none';
 });
