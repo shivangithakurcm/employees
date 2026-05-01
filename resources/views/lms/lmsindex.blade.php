@@ -16,10 +16,14 @@ svg.w-5.h-5 { display: none; }
 @php
     $currentStatus = request('status', '');
     $currentType   = request('type', '');
-    $isFollowUp    = $currentStatus === 'follow_up';
+    $isFollowUp         = $currentStatus === 'follow_up';
     $isCallSchedule     = $currentType === 'call_schedule';
     $isCallBackRequired = $currentType === 'call_back_required';
-    $showExtraCols  = $isCallSchedule || $isCallBackRequired;
+    $isQualified        = $currentStatus === 'qualified';
+    $isProposalSent     = $currentStatus === 'proposal_sent';
+    $showExtraCols      = $isCallSchedule || $isCallBackRequired;
+    $showQualifiedCols  = $isQualified;
+    $showProposalCols   = $isProposalSent;
 @endphp
 
 {{-- Status Tabs --}}
@@ -132,13 +136,31 @@ svg.w-5.h-5 { display: none; }
                     <th>Sno.</th>
                     <th>Full Name</th>
                     <th>Contact</th>
+                    @if(!$showProposalCols)
                     <th>Email</th>
+                    @endif
                     <th>City</th>
-                    <th>Requirement</th>
+                    @if($showQualifiedCols || $showProposalCols)
+                        <th>State</th>
+                    @endif
+                    @if(!$showProposalCols)
+                        <th>Requirement</th>
+                    @endif
                     @if($showExtraCols)
                         <th>Date</th>
                         <th>Time</th>
                         <th>Comment</th>
+                    @endif
+                    @if($showQualifiedCols)
+                        <th>Date</th>
+                        <th>Time</th>
+                    @endif
+                    @if($showProposalCols)
+                        <th>Proposal Amount</th>
+                        <th>Timeline</th>
+                        <th>Sent Date</th>
+                        <th>Negotiation Amt</th>
+                        <th>Proposal Doc</th>
                     @endif
                     <th>Status</th>
                     <th>Add Date</th>
@@ -151,13 +173,42 @@ svg.w-5.h-5 { display: none; }
                     <td>{{ ($leads->currentPage() - 1) * $leads->perPage() + $loop->iteration }}</td>
                     <td>{{ $lead->first_name }} {{ $lead->last_name }}</td>
                     <td>{{ $lead->contact_number }}</td>
+                    @if(!$showProposalCols)
                     <td>{{ $lead->email ?? '-' }}</td>
+                    @endif
                     <td>{{ $lead->city ?? '-' }}</td>
-                    <td>{{ $lead->Requirement ?? '-' }}</td>
+                    @if($showQualifiedCols || $showProposalCols)
+                        <td>{{ $lead->state ?? '-' }}</td>
+                    @endif
+                    @if(!$showProposalCols)
+                        <td>{{ $lead->Requirement ?? '-' }}</td>
+                    @endif
                     @if($showExtraCols)
                         <td>{{ $lead->date ?? '-' }}</td>
                         <td>{{ $lead->time ?? '-' }}</td>
                         <td>{{ $lead->comment ?? '-' }}</td>
+                    @endif
+                    @if($showQualifiedCols)
+                        <td>{{ $lead->date ?? '-' }}</td>
+                        <td>{{ $lead->time ?? '-' }}</td>
+                    @endif
+                    @if($showProposalCols)
+                        <td>{{ $lead->amount ? '₹'.number_format($lead->amount, 2) : '-' }}</td>
+                        <td>{{ $lead->timeline ?? '-' }}</td>
+                        <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
+                        <td>{{ $lead->negotiation_amount ? '₹'.number_format($lead->negotiation_amount, 2) : '-' }}</td>
+                        <td>
+                            @if($lead->proposal_document)
+                                <a href="{{ asset('storage/'.$lead->proposal_document) }}"
+                                   target="_blank"
+                                   class="btn btn-sm"
+                                   style="background:#6f42c1; color:#fff; font-size:11px; padding:3px 8px;">
+                                   📄 View
+                                </a>
+                            @else
+                                -
+                            @endif
+                        </td>
                     @endif
                     <td>
                         <span class="badge
@@ -170,6 +221,8 @@ svg.w-5.h-5 { display: none; }
                             @elseif($lead->status == 'not_responded') bg-secondary
                             @elseif($lead->status == 'qualified') bg-info text-dark
                             @elseif($lead->status == 'proposal_sent') bg-purple text-white
+                            @elseif($lead->status == 'on_hold') bg-warning text-dark
+                            @elseif($lead->status == 'negotiation') bg-info text-dark
                             @else bg-secondary
                             @endif">
                             {{ ucwords(str_replace('_', ' ', $lead->status)) }}
@@ -178,25 +231,38 @@ svg.w-5.h-5 { display: none; }
                     <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
                     <td style="white-space:nowrap; vertical-align:middle;">
                         <div class="d-flex gap-1">
-                            <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info">V</a>
-                            <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning">E</a>
+                            <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                <i class="fas fa-pen"></i>
+                            </a>
 
-                            @if(!$currentStatus)
-                                <button class="btn btn-sm btn-success" disabled style="opacity:0.4; cursor:not-allowed;">A</button>
-                            @else
-                                <button class="btn btn-sm btn-success"
+                            @if(in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent']))
+                                <button class="btn btn-sm btn-success" title="Action"
                                     data-bs-toggle="modal"
                                     data-bs-target="#actionModal"
-                                    onclick="setLead({{ $lead->id }}, '{{ $lead->status }}')">A</button>
+                                    onclick="setLead({{ $lead->id }}, '{{ $lead->status }}')">
+                                    <i class="fas fa-bolt"></i>
+                                </button>
+                            @else
+                                <button class="btn btn-sm btn-success" disabled title="Action"
+                                    style="opacity:0.4; cursor:not-allowed;">
+                                    <i class="fas fa-bolt"></i>
+                                </button>
                             @endif
 
-                            <button class="btn btn-sm btn-primary"
+                            <button class="btn btn-sm btn-primary" title="History"
                                 data-bs-toggle="modal"
                                 data-bs-target="#historyModal"
-                                onclick="loadHistory({{ $lead->id }})">H</button>
+                                onclick="loadHistory({{ $lead->id }})">
+                                <i class="fas fa-history"></i>
+                            </button>
 
-                            <button type="button" class="btn btn-sm btn-danger"
-                                onclick="confirmDelete({{ $lead->id }})">D</button>
+                            <button type="button" class="btn btn-sm btn-danger" title="Delete"
+                                onclick="confirmDelete({{ $lead->id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
 
                             <form id="deleteForm{{ $lead->id }}"
                                   action="{{ route('admin.lms.destroy', $lead->id) }}"
@@ -209,7 +275,7 @@ svg.w-5.h-5 { display: none; }
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="{{ $showExtraCols ? 11 : 9 }}" class="text-center text-muted">
+                    <td colspan="{{ $showExtraCols ? 11 : ($showQualifiedCols ? 11 : ($showProposalCols ? 12 : 9)) }}" class="text-center text-muted">
                         No leads found
                     </td>
                 </tr>
@@ -329,19 +395,44 @@ svg.w-5.h-5 { display: none; }
                             <option value="">Select</option>
                         </select>
                     </div>
+                    {{-- Date (follow_up / reschedule) --}}
                     <div class="mb-3" id="actionDate" style="display:none;">
                         <label>Date</label>
                         <input type="date" name="date" class="form-control">
                     </div>
+                    {{-- Time (follow_up / reschedule) --}}
                     <div class="mb-3" id="actionTime" style="display:none;">
                         <label>Time</label>
                         <input type="time" name="time" class="form-control">
                     </div>
+                    {{-- Proposal Upload (qualified → proposal_sent) --}}
                     <div class="mb-3" id="actionProposal" style="display:none;">
                         <label>Upload Proposal <span class="text-danger">*</span></label>
                         <input type="file" name="proposal" id="proposalInput" class="form-control" accept=".pdf,.doc,.docx">
                         <small class="text-muted">PDF, DOC, DOCX allowed</small>
                     </div>
+                    {{-- Amount (qualified → proposal_sent) --}}
+                    <div class="mb-3" id="actionAmount" style="display:none;">
+                        <label>Amount <span class="text-danger">*</span></label>
+                        <input type="number" name="amount" id="amountInput" class="form-control" placeholder="Enter amount">
+                    </div>
+                    {{-- Timeline (qualified → proposal_sent) --}}
+                    <div class="mb-3" id="actionTimeline" style="display:none;">
+                        <label>Timeline <span class="text-danger">*</span></label>
+                        <input type="text" name="timeline" id="timelineInput" class="form-control" placeholder="e.g. 2 weeks, 1 month">
+                    </div>
+                    {{-- Negotiation Amount (proposal_sent → won / negotiation) --}}
+                    <div class="mb-3" id="actionNegotiationAmt" style="display:none;">
+                        <label>Negotiation Amount <span class="text-danger">*</span></label>
+                        <input type="number" name="negotiation_amount" id="negotiationAmtInput" class="form-control" placeholder="Enter negotiation amount">
+                    </div>
+                    {{-- Revised Proposal (proposal_sent → won / negotiation) --}}
+                    <div class="mb-3" id="actionRevisedDoc" style="display:none;">
+                        <label>Revised Proposal <span class="text-danger">*</span></label>
+                        <input type="file" name="revised_proposal" id="revisedDocInput" class="form-control" accept=".pdf,.doc,.docx">
+                        <small class="text-muted">PDF, DOC, DOCX allowed</small>
+                    </div>
+                    {{-- Comment (always) --}}
                     <div class="mb-3">
                         <label>Comment</label>
                         <textarea name="comment" class="form-control" required></textarea>
@@ -456,11 +547,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('leadId').value     = id;
         document.getElementById('leadStatus').value = status;
 
-        document.getElementById('actionDate').style.display     = 'none';
-        document.getElementById('actionTime').style.display     = 'none';
-        document.getElementById('actionProposal').style.display = 'none';
-        document.getElementById('actionType').value             = '';
-        document.getElementById('proposalInput').value          = '';
+        // Reset all fields
+        document.getElementById('actionDate').style.display          = 'none';
+        document.getElementById('actionTime').style.display          = 'none';
+        document.getElementById('actionProposal').style.display      = 'none';
+        document.getElementById('actionAmount').style.display        = 'none';
+        document.getElementById('actionTimeline').style.display      = 'none';
+        document.getElementById('actionNegotiationAmt').style.display = 'none';
+        document.getElementById('actionRevisedDoc').style.display    = 'none';
+        document.getElementById('actionType').value                  = '';
+        document.getElementById('proposalInput').value               = '';
+        document.getElementById('amountInput').value                 = '';
+        document.getElementById('timelineInput').value               = '';
+        document.getElementById('negotiationAmtInput').value         = '';
+        document.getElementById('revisedDocInput').value             = '';
 
         let actionType = document.getElementById('actionType');
         actionType.innerHTML = '<option value="">Select</option>';
@@ -476,6 +576,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (status === 'qualified') {
             actionType.innerHTML += '<option value="lost">Lost</option>';
             actionType.innerHTML += '<option value="proposal_sent">Proposal Sent</option>';
+        } else if (status === 'proposal_sent') {
+            actionType.innerHTML += '<option value="won">Won</option>';
+            actionType.innerHTML += '<option value="negotiation">Negotiation</option>';
+            actionType.innerHTML += '<option value="lost">Lost</option>';
+            actionType.innerHTML += '<option value="on_hold">On Hold</option>';
         } else {
             actionType.innerHTML += '<option value="lost">Lost</option>';
             actionType.innerHTML += '<option value="qualified">Qualified</option>';
@@ -488,9 +593,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let val    = this.value;
         let status = document.getElementById('leadStatus').value;
 
-        document.getElementById('actionDate').style.display     = 'none';
-        document.getElementById('actionTime').style.display     = 'none';
-        document.getElementById('actionProposal').style.display = 'none';
+        // Reset all conditional fields
+        document.getElementById('actionDate').style.display          = 'none';
+        document.getElementById('actionTime').style.display          = 'none';
+        document.getElementById('actionProposal').style.display      = 'none';
+        document.getElementById('actionAmount').style.display        = 'none';
+        document.getElementById('actionTimeline').style.display      = 'none';
+        document.getElementById('actionNegotiationAmt').style.display = 'none';
+        document.getElementById('actionRevisedDoc').style.display    = 'none';
 
         if (status === 'call_schedule' || status === 'call_back_required') {
             if (val !== 'lost' && val !== '') {
@@ -498,13 +608,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('actionTime').style.display = 'block';
             }
         } else if (status === 'qualified') {
-            if (val === 'lost' || val === 'proposal_sent') {
-                document.getElementById('actionDate').style.display = 'block';
-                document.getElementById('actionTime').style.display = 'block';
-            }
             if (val === 'proposal_sent') {
                 document.getElementById('actionProposal').style.display = 'block';
+                document.getElementById('actionAmount').style.display   = 'block';
+                document.getElementById('actionTimeline').style.display = 'block';
             }
+        } else if (status === 'proposal_sent') {
+            if (val === 'won' || val === 'negotiation') {
+                // Won / Negotiation → Negotiation Amt + Revised Proposal + Comment
+                document.getElementById('actionNegotiationAmt').style.display = 'block';
+                document.getElementById('actionRevisedDoc').style.display     = 'block';
+            }
+            // Lost / On Hold → sirf Comment (always visible)
         } else {
             if (val === 'reschedule') {
                 document.getElementById('actionDate').style.display = 'block';
@@ -555,6 +670,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     'lost':               'Lost',
                     'draft':              'Draft',
                     'reschedule':         'Reschedule',
+                    'negotiation':        'Negotiation',
+                    'on_hold':            'On Hold',
                 };
 
                 const statusColor = {
@@ -569,6 +686,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     'lost':               '#dc3545',
                     'draft':              '#aaa',
                     'reschedule':         '#17a2b8',
+                    'negotiation':        '#fd7e14',
+                    'on_hold':            '#ffc107',
                 };
 
                 const sectionInfo = {
@@ -597,6 +716,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (item.to_status === 'qualified')                                          sectionName = 'Qualified';
                         else if (item.to_status === 'proposal_sent')                                 sectionName = 'Proposal Sent';
                         else if (item.to_status === 'won')                                           sectionName = 'Won';
+                        else if (item.to_status === 'negotiation')                                   sectionName = 'Negotiation';
+                        else if (item.to_status === 'on_hold')                                       sectionName = 'On Hold';
                         else if (['lost','not_interested','not_in_scope'].includes(item.to_status))  sectionName = 'Lost';
                         else                                                                          sectionName = 'Follow Up';
                     }
@@ -633,6 +754,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong style="color:#fff; font-size:13px;">${item.time}</strong>
                         </div>`;
                     }
+                    if (item.negotiation_amount) {
+                        fields += `
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                            <span style="font-size:16px; width:20px; text-align:center;">💰</span>
+                            <span style="color:#f0c040; font-size:12px; font-weight:600; min-width:70px;">Nego Amt :</span>
+                            <strong style="color:#fff; font-size:13px;">₹${item.negotiation_amount}</strong>
+                        </div>`;
+                    }
                     if (item.comment) {
                         fields += `
                         <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:8px;">
@@ -648,6 +777,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span style="color:#f0c040; font-size:12px; font-weight:600; min-width:70px;">Proposal :</span>
                             <a href="${item.document}" target="_blank"
                                style="color:#6f42c1; font-size:13px; text-decoration:none; font-weight:600;">
+                               View Document ↗</a>
+                        </div>`;
+                    }
+                    if (item.revised_document) {
+                        fields += `
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                            <span style="font-size:16px; width:20px; text-align:center;">📋</span>
+                            <span style="color:#f0c040; font-size:12px; font-weight:600; min-width:70px;">Revised Doc :</span>
+                            <a href="${item.revised_document}" target="_blank"
+                               style="color:#fd7e14; font-size:13px; text-decoration:none; font-weight:600;">
                                View Document ↗</a>
                         </div>`;
                     }
