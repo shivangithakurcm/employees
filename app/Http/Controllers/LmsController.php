@@ -210,6 +210,58 @@ class LmsController extends Controller
     $lead->date    = $request->date    ?? null;
     $lead->time    = $request->time    ?? null;
     $lead->comment = $request->comment ?? null;
+
+    // ─── Proposal Sent ─────────────────────
+if ($request->action_type === 'proposal_sent') {
+
+    if ($request->hasFile('proposal')) {
+        $path = $request->file('proposal')->store('proposals', 'public');
+        $lead->proposal_document = $path;
+    }
+
+    $lead->amount   = $request->amount;
+    $lead->timeline = $request->timeline;
+}
+
+// ─── Negotiation ───────────────────────
+if ($request->action_type === 'negotiation') {
+
+    if ($request->hasFile('revised_proposal')) {
+        $path = $request->file('revised_proposal')->store('proposals', 'public');
+        $lead->revised_proposal = $path;
+    }
+
+    $lead->negotiation_amount = $request->negotiation_amount;
+}
+
+    if ($request->action_type === 'won') {
+
+    $lead->won_name           = $request->won_name;
+    $lead->won_contact        = $request->won_contact;
+    $lead->won_email          = $request->won_email;
+    $lead->won_designation    = $request->won_designation;
+    $lead->won_business_name  = $request->won_business_name;
+    $lead->won_gst_no         = $request->won_gst_no;
+    $lead->won_location       = $request->won_location;
+
+    $lead->won_country        = $request->won_country;
+    $lead->won_state          = $request->won_state;
+    $lead->won_city           = $request->won_city;
+
+    $lead->won_project_detail = $request->won_project_detail;
+    $lead->won_final_cost     = $request->won_final_cost;
+    $lead->won_milestone      = $request->won_milestone;
+    $lead->won_timeline       = $request->won_timeline;
+
+    $lead->won_token_received = $request->won_token_received;
+
+    if ($request->won_token_received === 'yes') {
+        $lead->won_token_amount  = $request->won_token_amount;
+        $lead->won_amount_type   = $request->won_amount_type;
+        $lead->won_received_date = $request->won_received_date;
+        $lead->won_gst_type      = $request->won_gst_type;
+    }
+}
     $lead->save();
 
     LeadHistory::create([
