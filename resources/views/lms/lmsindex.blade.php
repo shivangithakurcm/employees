@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (deleteLeadId) document.getElementById('deleteForm' + deleteLeadId).submit();
     });
 
-    // ─── setLead — Action dropdown populate ─────────────────────────
+    // ─── setLead ─────────────────────────────────────────────────────
     window.setLead = function(id, status) {
         document.getElementById('leadId').value     = id;
         document.getElementById('leadStatus').value = status;
@@ -467,12 +467,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (status === 'call_schedule') {
             actionType.innerHTML += '<option value="lost">Lost</option>';
-            actionType.innerHTML += '<option value="call_schedule">Call Schedule</option>';
-            actionType.innerHTML += '<option value="call_back_required">Call Back Required</option>';
-        } else if (status === 'call_back_required') {
-            actionType.innerHTML += '<option value="lost">Lost</option>';
             actionType.innerHTML += '<option value="qualified">Qualified</option>';
             actionType.innerHTML += '<option value="reschedule">Reschedule</option>';
+        } else if (status === 'call_back_required') {
+            actionType.innerHTML += '<option value="lost">Lost</option>';
+            actionType.innerHTML += '<option value="call_schedule">Call Schedule</option>';
+            actionType.innerHTML += '<option value="call_back_required">Call Back Required</option>';
         } else if (status === 'qualified') {
             actionType.innerHTML += '<option value="lost">Lost</option>';
             actionType.innerHTML += '<option value="proposal_sent">Proposal Sent</option>';
@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // ─── actionType change — fields show/hide ───────────────────────
+    // ─── actionType change ───────────────────────────────────────────
     document.getElementById('actionType').addEventListener('change', function() {
         let val    = this.value;
         let status = document.getElementById('leadStatus').value;
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('actionTime').style.display     = 'none';
         document.getElementById('actionProposal').style.display = 'none';
 
-        if (status === 'call_schedule') {
+        if (status === 'call_schedule' || status === 'call_back_required') {
             if (val !== 'lost' && val !== '') {
                 document.getElementById('actionDate').style.display = 'block';
                 document.getElementById('actionTime').style.display = 'block';
@@ -515,9 +515,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ─── Add Lead Modal reset ────────────────────────────────────────
     document.getElementById('addLeadModal').addEventListener('hidden.bs.modal', function() {
-        document.getElementById('dateField').style.display  = 'none';
-        document.getElementById('timeField').style.display  = 'none';
-        document.getElementById('statusSelect').value       = '';
+        document.getElementById('dateField').style.display = 'none';
+        document.getElementById('timeField').style.display = 'none';
+        document.getElementById('statusSelect').value      = '';
     });
 
     document.getElementById('statusSelect').addEventListener('change', function() {
@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('historyContent').innerHTML =
             '<p class="text-muted text-center mt-3">Loading...</p>';
 
-        fetch("{{ url('admin/lms/history') }}/" + leadId)
+        fetch(`/admin/lms/history/${leadId}`)
             .then(res => res.json())
             .then(data => {
                 const history = data.history || [];
@@ -588,21 +588,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     const toLabel = statusLabel[item.to_status] || item.to_status || '';
                     const toClr   = statusColor[item.to_status] || '#aaa';
 
-                    // ── Section Name ──
                     let sectionName = '';
                     if (item.event_type === 'created') {
                         sectionName = 'New Lead';
                     } else if (item.event_type === 'edited') {
                         sectionName = 'Lead Edited';
                     } else {
-                        if (item.to_status === 'qualified')                                             sectionName = 'Qualified';
-                        else if (item.to_status === 'proposal_sent')                                    sectionName = 'Proposal Sent';
-                        else if (item.to_status === 'won')                                              sectionName = 'Won';
-                        else if (['lost','not_interested','not_in_scope'].includes(item.to_status))     sectionName = 'Lost';
-                        else                                                                             sectionName = 'Follow Up';
+                        if (item.to_status === 'qualified')                                          sectionName = 'Qualified';
+                        else if (item.to_status === 'proposal_sent')                                 sectionName = 'Proposal Sent';
+                        else if (item.to_status === 'won')                                           sectionName = 'Won';
+                        else if (['lost','not_interested','not_in_scope'].includes(item.to_status))  sectionName = 'Lost';
+                        else                                                                          sectionName = 'Follow Up';
                     }
 
-                    // ── Heading ──
                     let heading = `<span style="color:${sec.color}; font-weight:700; font-size:14px;">${sec.icon} ${sectionName}</span>`;
 
                     if (item.event_type === 'created') {
@@ -618,7 +616,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         </span>`;
                     }
 
-                    // ── Fields — sirf jo fill hain wahi dikhao ──
                     let fields = '';
                     if (item.date) {
                         fields += `
@@ -661,15 +658,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             width:14px; height:14px; border-radius:50%;
                             background:${dotClr}; border:2px solid #0d0d0d;
                             box-shadow:0 0 0 3px ${dotClr}33; z-index:1;"></div>
-
                         <div style="background:#1a1a1a; border:1px solid #2a2a2a;
                             border-left:4px solid ${sec.color}; border-radius:8px; padding:13px 16px;">
-
                             <div style="display:flex; align-items:center; flex-wrap:wrap;
                                 gap:4px; margin-bottom:${fields ? '12px' : '0'};">
                                 ${heading}
                             </div>
-
                             ${fields ? `<div style="border-top:1px solid #2a2a2a; padding-top:12px;">${fields}</div>` : ''}
                         </div>
                     </div>`;

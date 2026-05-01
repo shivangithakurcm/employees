@@ -120,12 +120,24 @@
 
     {{-- Flash Messages --}}
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
+<div id="successToast"
+     style="position:fixed; top:20px; right:20px; z-index:999999;
+            background:#198754; color:#fff; padding:12px 20px;
+            border-radius:8px; font-size:14px; font-weight:500;
+            box-shadow:0 4px 15px rgba(0,0,0,0.4);
+            display:flex; align-items:center; gap:12px;">
+    <i class="fas fa-check-circle"></i>
+    {{ session('success') }}
+    <span onclick="document.getElementById('successToast').remove()"
+          style="cursor:pointer; font-size:16px; line-height:1; opacity:0.8;">✕</span>
+</div>
+<script>
+    setTimeout(function() {
+        var t = document.getElementById('successToast');
+        if (t) t.remove();
+    }, 3000);
+</script>
+@endif
     @if($errors->any())
         <div class="alert alert-danger">
             <ul class="mb-0">
