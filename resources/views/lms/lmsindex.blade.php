@@ -21,9 +21,13 @@ svg.w-5.h-5 { display: none; }
     $isCallBackRequired = $currentType === 'call_back_required';
     $isQualified        = $currentStatus === 'qualified';
     $isProposalSent     = $currentStatus === 'proposal_sent';
+    $isLost             = $currentStatus === 'lost';
     $showExtraCols      = $isCallSchedule || $isCallBackRequired;
     $showQualifiedCols  = $isQualified;
     $showProposalCols   = $isProposalSent;
+    $showLostCols       = $isLost;
+    $isWon = $currentStatus === 'won';
+$showWonCols = $isWon;
 @endphp
 
 {{-- Status Tabs --}}
@@ -131,153 +135,186 @@ svg.w-5.h-5 { display: none; }
 <div class="card-dark" style="overflow: hidden; padding-bottom: 0;">
     <div style="overflow-x: auto;">
         <table class="table table-dark table-bordered mb-0" style="white-space: nowrap;">
-            <thead>
-                <tr>
-                    <th>Sno.</th>
-                    <th>Full Name</th>
-                    <th>Contact</th>
-                    @if(!$showProposalCols)
-                    <th>Email</th>
-                    @endif
-                    <th>City</th>
-                    @if($showQualifiedCols || $showProposalCols)
-                        <th>State</th>
-                    @endif
-                    @if(!$showProposalCols)
-                        <th>Requirement</th>
-                    @endif
-                    @if($showExtraCols)
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Comment</th>
-                    @endif
-                    @if($showQualifiedCols)
-                        <th>Date</th>
-                        <th>Time</th>
-                    @endif
-                    @if($showProposalCols)
-                        <th>Proposal Amount</th>
-                        <th>Timeline</th>
-                        <th>Sent Date</th>
-                        <th>Negotiation Amt</th>
-                        <th>Proposal Doc</th>
-                    @endif
-                    <th>Status</th>
-                    <th>Add Date</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+           <thead>
+    <tr>
+        <th>Sno.</th>
+        <th>Full Name</th>
+        <th>Contact</th>
+        @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+        <th>Email</th>
+        @endif
+        @if($showWonCols)
+        <th>Email</th>
+        <th>Business Name</th>
+        @endif
+        <th>City</th>
+        @if($showQualifiedCols || $showProposalCols || $showLostCols)
+            <th>State</th>
+        @endif
+        @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+            <th>Requirement</th>
+        @endif
+        @if($showExtraCols)
+            <th>Date</th>
+            <th>Time</th>
+            <th>Comment</th>
+        @endif
+        @if($showQualifiedCols)
+            <th>Date</th>
+            <th>Time</th>
+        @endif
+        @if($showProposalCols)
+            <th>Proposal Amount</th>
+            <th>Timeline</th>
+            <th>Sent Date</th>
+            <th>Negotiation Amt</th>
+            <th>Proposal Doc</th>
+        @endif
+        @if($showLostCols)
+            <th>Comment</th>
+            <th>Lost Date</th>
+        @endif
+        @if($showWonCols)
+            <th>Project Cost</th>
+            <th>Timeline</th>
+            <th>Milestone</th>
+            <th>Token Received</th>
+        @endif
+        <th>Status</th>
+        @if(!$showLostCols && !$showWonCols)
+        <th>Add Date</th>
+        @endif
+        <th>Action</th>
+    </tr>
+</thead>
             <tbody>
                 @forelse($leads as $lead)
-                <tr>
-                    <td>{{ ($leads->currentPage() - 1) * $leads->perPage() + $loop->iteration }}</td>
-                    <td>{{ $lead->first_name }} {{ $lead->last_name }}</td>
-                    <td>{{ $lead->contact_number }}</td>
-                    @if(!$showProposalCols)
-                    <td>{{ $lead->email ?? '-' }}</td>
-                    @endif
-                    <td>{{ $lead->city ?? '-' }}</td>
-                    @if($showQualifiedCols || $showProposalCols)
-                        <td>{{ $lead->state ?? '-' }}</td>
-                    @endif
-                    @if(!$showProposalCols)
-                        <td>{{ $lead->Requirement ?? '-' }}</td>
-                    @endif
-                    @if($showExtraCols)
-                        <td>{{ $lead->date ?? '-' }}</td>
-                        <td>{{ $lead->time ?? '-' }}</td>
-                        <td>{{ $lead->comment ?? '-' }}</td>
-                    @endif
-                    @if($showQualifiedCols)
-                        <td>{{ $lead->date ?? '-' }}</td>
-                        <td>{{ $lead->time ?? '-' }}</td>
-                    @endif
-                    @if($showProposalCols)
-                        <td>{{ $lead->amount ? '₹'.number_format($lead->amount, 2) : '-' }}</td>
-                        <td>{{ $lead->timeline ?? '-' }}</td>
-                        <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
-                        <td>{{ $lead->negotiation_amount ? '₹'.number_format($lead->negotiation_amount, 2) : '-' }}</td>
-                        <td>
-                            @if($lead->proposal_document)
-                                <a href="{{ asset('storage/'.$lead->proposal_document) }}"
-                                   target="_blank"
-                                   class="btn btn-sm"
-                                   style="background:#6f42c1; color:#fff; font-size:11px; padding:3px 8px;">
-                                   📄 View
-                                </a>
-                            @else
-                                -
-                            @endif
-                        </td>
-                    @endif
-                    <td>
-                        <span class="badge
-                            @if($lead->status == 'won') bg-success
-                            @elseif($lead->status == 'lost') bg-danger
-                            @elseif($lead->status == 'not_interested') bg-danger
-                            @elseif($lead->status == 'not_in_scope') bg-danger
-                            @elseif($lead->status == 'call_schedule') bg-primary
-                            @elseif($lead->status == 'call_back_required') bg-warning text-dark
-                            @elseif($lead->status == 'not_responded') bg-secondary
-                            @elseif($lead->status == 'qualified') bg-info text-dark
-                            @elseif($lead->status == 'proposal_sent') bg-purple text-white
-                            @elseif($lead->status == 'on_hold') bg-warning text-dark
-                            @elseif($lead->status == 'negotiation') bg-info text-dark
-                            @else bg-secondary
-                            @endif">
-                            {{ ucwords(str_replace('_', ' ', $lead->status)) }}
-                        </span>
-                    </td>
-                    <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
-                    <td style="white-space:nowrap; vertical-align:middle;">
-                        <div class="d-flex gap-1">
-                            <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info" title="View">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning" title="Edit">
-                                <i class="fas fa-pen"></i>
-                            </a>
-
-                            @if(in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent']))
-                                <button class="btn btn-sm btn-success" title="Action"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#actionModal"
-                                    onclick="setLead({{ $lead->id }}, '{{ $lead->status }}')">
-                                    <i class="fas fa-bolt"></i>
-                                </button>
-                            @else
-                                <button class="btn btn-sm btn-success" disabled title="Action"
-                                    style="opacity:0.4; cursor:not-allowed;">
-                                    <i class="fas fa-bolt"></i>
-                                </button>
-                            @endif
-
-                            <button class="btn btn-sm btn-primary" title="History"
-                                data-bs-toggle="modal"
-                                data-bs-target="#historyModal"
-                                onclick="loadHistory({{ $lead->id }})">
-                                <i class="fas fa-history"></i>
-                            </button>
-
-                            <button type="button" class="btn btn-sm btn-danger" title="Delete"
-                                onclick="confirmDelete({{ $lead->id }})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-
-                            <form id="deleteForm{{ $lead->id }}"
-                                  action="{{ route('admin.lms.destroy', $lead->id) }}"
-                                  method="POST" style="display:none;">
-                                @csrf
-                                @method('DELETE')
-                            </form>
-                        </div>
-                    </td>
-                </tr>
+               <tr>
+    <td>{{ ($leads->currentPage() - 1) * $leads->perPage() + $loop->iteration }}</td>
+    <td>{{ $lead->first_name }} {{ $lead->last_name }}</td>
+    <td>{{ $lead->contact_number }}</td>
+    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+    <td>{{ $lead->email ?? '-' }}</td>
+    @endif
+    @if($showWonCols)
+    <td>{{ $lead->won_email ?? $lead->email ?? '-' }}</td>
+    <td>{{ $lead->won_business_name ?? '-' }}</td>
+    @endif
+    <td>{{ $lead->won_city ?? $lead->city ?? '-' }}</td>
+    @if($showQualifiedCols || $showProposalCols || $showLostCols)
+        <td>{{ $lead->state ?? '-' }}</td>
+    @endif
+    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+        <td>{{ $lead->Requirement ?? '-' }}</td>
+    @endif
+    @if($showExtraCols)
+        <td>{{ $lead->date ?? '-' }}</td>
+        <td>{{ $lead->time ?? '-' }}</td>
+        <td>{{ $lead->comment ?? '-' }}</td>
+    @endif
+    @if($showQualifiedCols)
+        <td>{{ $lead->date ?? '-' }}</td>
+        <td>{{ $lead->time ?? '-' }}</td>
+    @endif
+    @if($showProposalCols)
+        <td>{{ $lead->amount ? '₹'.number_format($lead->amount, 2) : '-' }}</td>
+        <td>{{ $lead->timeline ?? '-' }}</td>
+        <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
+        <td>{{ $lead->negotiation_amount ? '₹'.number_format($lead->negotiation_amount, 2) : '-' }}</td>
+        <td>
+            @if($lead->proposal_document)
+                <a href="{{ asset('storage/'.$lead->proposal_document) }}"
+                   target="_blank" class="btn btn-sm"
+                   style="background:#6f42c1;color:#fff;font-size:11px;padding:3px 8px;">
+                   📄 View
+                </a>
+            @else
+                -
+            @endif
+        </td>
+    @endif
+    @if($showLostCols)
+        <td>{{ $lead->comment ?? '-' }}</td>
+        <td>{{ $lead->updated_at ? $lead->updated_at->format('d-m-Y') : '-' }}</td>
+    @endif
+    @if($showWonCols)
+        <td>{{ $lead->won_final_cost ? '₹'.number_format($lead->won_final_cost, 2) : '-' }}</td>
+        <td>{{ $lead->won_timeline ?? '-' }}</td>
+        <td>{{ $lead->won_milestone ?? '-' }}</td>
+        <td>
+            @if($lead->won_token_received === 'yes')
+                <span class="badge bg-success">Yes</span>
+            @elseif($lead->won_token_received === 'no')
+                <span class="badge bg-secondary">No</span>
+            @else
+                -
+            @endif
+        </td>
+    @endif
+    <td>
+        <span class="badge
+            @if($lead->status == 'won') bg-success
+            @elseif($lead->status == 'lost') bg-danger
+            @elseif($lead->status == 'not_interested') bg-danger
+            @elseif($lead->status == 'not_in_scope') bg-danger
+            @elseif($lead->status == 'call_schedule') bg-primary
+            @elseif($lead->status == 'call_back_required') bg-warning text-dark
+            @elseif($lead->status == 'not_responded') bg-secondary
+            @elseif($lead->status == 'qualified') bg-info text-dark
+            @elseif($lead->status == 'proposal_sent') bg-purple text-white
+            @elseif($lead->status == 'on_hold') bg-warning text-dark
+            @elseif($lead->status == 'negotiation') bg-info text-dark
+            @else bg-secondary
+            @endif">
+            {{ ucwords(str_replace('_', ' ', $lead->status)) }}
+        </span>
+    </td>
+    @if(!$showLostCols && !$showWonCols)
+    <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
+    @endif
+    <td style="white-space:nowrap; vertical-align:middle;">
+        <div class="d-flex gap-1">
+            <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info" title="View">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning" title="Edit">
+                <i class="fas fa-pen"></i>
+            </a>
+            @if(!$showLostCols && !$showWonCols && in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent']))
+                <button class="btn btn-sm btn-success" title="Action"
+                    data-bs-toggle="modal" data-bs-target="#actionModal"
+                    onclick="setLead({{ $lead->id }}, '{{ $lead->status }}')">
+                    <i class="fas fa-bolt"></i>
+                </button>
+            @elseif(!$showLostCols && !$showWonCols)
+                <button class="btn btn-sm btn-success" disabled title="Action"
+                    style="opacity:0.4;cursor:not-allowed;">
+                    <i class="fas fa-bolt"></i>
+                </button>
+            @endif
+            <button class="btn btn-sm btn-primary" title="History"
+                data-bs-toggle="modal" data-bs-target="#historyModal"
+                onclick="loadHistory({{ $lead->id }})">
+                <i class="fas fa-history"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" title="Delete"
+                onclick="confirmDelete({{ $lead->id }})">
+                <i class="fas fa-trash"></i>
+            </button>
+            <form id="deleteForm{{ $lead->id }}"
+                  action="{{ route('admin.lms.destroy', $lead->id) }}"
+                  method="POST" style="display:none;">
+                @csrf
+                @method('DELETE')
+            </form>
+        </div>
+    </td>
+</tr>
                 @empty
                 <tr>
-                    <td colspan="{{ $showExtraCols ? 11 : ($showQualifiedCols ? 11 : ($showProposalCols ? 12 : 9)) }}" class="text-center text-muted">
-                        No leads found
-                    </td>
+                    <td colspan="{{ $showLostCols ? 8 : ($showWonCols ? 10 : ($showExtraCols ? 11 : ($showQualifiedCols ? 11 : ($showProposalCols ? 12 : 9)))) }}" class="text-center text-muted">
+    No leads found
+</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -378,7 +415,7 @@ svg.w-5.h-5 { display: none; }
 
 {{-- Action Modal --}}
 <div class="modal fade" id="actionModal">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark text-white">
             <form id="actionForm" action="{{ route('admin.lms.action') }}" method="POST" enctype="multipart/form-data">
                 @csrf
@@ -388,55 +425,199 @@ svg.w-5.h-5 { display: none; }
                     <h5>Take Action</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="max-height:75vh; overflow-y:auto;">
+
+                    {{-- Action Type --}}
                     <div class="mb-3">
                         <label>Select Action</label>
                         <select name="action_type" id="actionType" class="form-select" required>
                             <option value="">Select</option>
                         </select>
                     </div>
-                    {{-- Date (follow_up / reschedule) --}}
+
+                    {{-- Date --}}
                     <div class="mb-3" id="actionDate" style="display:none;">
                         <label>Date</label>
                         <input type="date" name="date" class="form-control">
                     </div>
-                    {{-- Time (follow_up / reschedule) --}}
+
+                    {{-- Time --}}
                     <div class="mb-3" id="actionTime" style="display:none;">
                         <label>Time</label>
                         <input type="time" name="time" class="form-control">
                     </div>
-                    {{-- Proposal Upload (qualified → proposal_sent) --}}
+
+                    {{-- Proposal Upload --}}
                     <div class="mb-3" id="actionProposal" style="display:none;">
                         <label>Upload Proposal <span class="text-danger">*</span></label>
                         <input type="file" name="proposal" id="proposalInput" class="form-control" accept=".pdf,.doc,.docx">
                         <small class="text-muted">PDF, DOC, DOCX allowed</small>
                     </div>
-                    {{-- Amount (qualified → proposal_sent) --}}
+
+                    {{-- Amount --}}
                     <div class="mb-3" id="actionAmount" style="display:none;">
                         <label>Amount <span class="text-danger">*</span></label>
                         <input type="number" name="amount" id="amountInput" class="form-control" placeholder="Enter amount">
                     </div>
-                    {{-- Timeline (qualified → proposal_sent) --}}
+
+                    {{-- Timeline --}}
                     <div class="mb-3" id="actionTimeline" style="display:none;">
                         <label>Timeline <span class="text-danger">*</span></label>
                         <input type="text" name="timeline" id="timelineInput" class="form-control" placeholder="e.g. 2 weeks, 1 month">
                     </div>
-                    {{-- Negotiation Amount (proposal_sent → won / negotiation) --}}
+
+                    {{-- Negotiation Amount --}}
                     <div class="mb-3" id="actionNegotiationAmt" style="display:none;">
                         <label>Negotiation Amount <span class="text-danger">*</span></label>
                         <input type="number" name="negotiation_amount" id="negotiationAmtInput" class="form-control" placeholder="Enter negotiation amount">
                     </div>
-                    {{-- Revised Proposal (proposal_sent → won / negotiation) --}}
+
+                    {{-- Revised Proposal --}}
                     <div class="mb-3" id="actionRevisedDoc" style="display:none;">
                         <label>Revised Proposal <span class="text-danger">*</span></label>
                         <input type="file" name="revised_proposal" id="revisedDocInput" class="form-control" accept=".pdf,.doc,.docx">
                         <small class="text-muted">PDF, DOC, DOCX allowed</small>
                     </div>
-                    {{-- Comment (always) --}}
-                    <div class="mb-3">
+
+                    {{-- ═══════════════════════════════════════════ --}}
+                    {{-- WON FORM (proposal_sent → won)             --}}
+                    {{-- ═══════════════════════════════════════════ --}}
+                    <div id="actionWonForm" style="display:none;">
+                        <hr style="border-color:#333;">
+                        <p style="color:#f0c040; font-weight:700; font-size:14px; margin-bottom:14px;">
+                            👤 Client Details
+                        </p>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" name="won_name" class="form-control" placeholder="Full Name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contact No <span class="text-danger">*</span></label>
+                                <input type="text" name="won_contact" class="form-control" placeholder="Contact Number">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" name="won_email" class="form-control" placeholder="Email">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Designation</label>
+                                <input type="text" name="won_designation" class="form-control" placeholder="Designation">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Business Name <span class="text-danger">*</span></label>
+                                <input type="text" name="won_business_name" class="form-control" placeholder="Business Name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">GST No</label>
+                                <input type="text" name="won_gst_no" class="form-control" placeholder="GST Number">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location</label>
+                                <input type="text" name="won_location" class="form-control" placeholder="Location / Address">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Country</label>
+                                <input type="text" name="won_country" class="form-control" placeholder="Country">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">State</label>
+                                <select name="won_state" class="form-select">
+                                    <option value="">— Select State —</option>
+                                    @foreach(['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Jammu & Kashmir','Ladakh','Chandigarh','Puducherry'] as $st)
+                                        <option value="{{ $st }}">{{ $st }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">City</label>
+                                <input type="text" name="won_city" class="form-control" placeholder="City">
+                            </div>
+                        </div>
+
+                        <hr style="border-color:#333; margin-top:16px;">
+                        <p style="color:#f0c040; font-weight:700; font-size:14px; margin-bottom:14px;">
+                            🏗️ Project Details
+                        </p>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label">Project Detail <span class="text-danger">*</span></label>
+                                <textarea name="won_project_detail" class="form-control" rows="3" placeholder="Describe project details..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Final Project Cost <span class="text-danger">*</span></label>
+                                <input type="number" name="won_final_cost" class="form-control" placeholder="Enter amount (₹)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Milestone</label>
+                                <input type="text" name="won_milestone" class="form-control" placeholder="e.g. Phase 1, Phase 2">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Timeline <span class="text-danger">*</span></label>
+                                <input type="text" name="won_timeline" class="form-control" placeholder="e.g. 2 months">
+                            </div>
+
+                            {{-- Token Received --}}
+                            <div class="col-md-6">
+                                <label class="form-label">Token Received?</label>
+                                <div class="d-flex gap-4 mt-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="won_token_received"
+                                               id="tokenYes" value="yes" onclick="toggleTokenFields(true)">
+                                        <label class="form-check-label text-white" for="tokenYes">Yes</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="won_token_received"
+                                               id="tokenNo" value="no" onclick="toggleTokenFields(false)" checked>
+                                        <label class="form-check-label text-white" for="tokenNo">No</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Token Fields (visible only when Yes) --}}
+                            <div id="tokenFields" class="col-12" style="display:none;">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Token Amount <span class="text-danger">*</span></label>
+                                        <input type="number" name="won_token_amount" class="form-control" placeholder="Enter token amount (₹)">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Amount Type</label>
+                                        <select name="won_amount_type" class="form-select">
+                                            <option value="">— Select —</option>
+                                            <option value="with_gst">With GST</option>
+                                            <option value="without_gst">Without GST</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Received Date <span class="text-danger">*</span></label>
+                                        <input type="date" name="won_received_date" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">GST Type</label>
+                                        <select name="won_gst_type" class="form-select">
+                                            <option value="">— Select —</option>
+                                            <option value="IGST">IGST</option>
+                                            <option value="CGST_SGST">CGST + SGST</option>
+                                            <option value="UTGST">UTGST</option>
+                                            <option value="exempt">Exempt</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            {{-- End Token Fields --}}
+
+                        </div>
+                        {{-- End Project Details row --}}
+                    </div>
+                    {{-- End Won Form --}}
+
+                    {{-- Comment (always visible) --}}
+                    <div class="mb-3 mt-3">
                         <label>Comment</label>
                         <textarea name="comment" class="form-control" required></textarea>
                     </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -548,19 +729,22 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('leadStatus').value = status;
 
         // Reset all fields
-        document.getElementById('actionDate').style.display          = 'none';
-        document.getElementById('actionTime').style.display          = 'none';
-        document.getElementById('actionProposal').style.display      = 'none';
-        document.getElementById('actionAmount').style.display        = 'none';
-        document.getElementById('actionTimeline').style.display      = 'none';
+        document.getElementById('actionDate').style.display           = 'none';
+        document.getElementById('actionTime').style.display           = 'none';
+        document.getElementById('actionProposal').style.display       = 'none';
+        document.getElementById('actionAmount').style.display         = 'none';
+        document.getElementById('actionTimeline').style.display       = 'none';
         document.getElementById('actionNegotiationAmt').style.display = 'none';
-        document.getElementById('actionRevisedDoc').style.display    = 'none';
-        document.getElementById('actionType').value                  = '';
-        document.getElementById('proposalInput').value               = '';
-        document.getElementById('amountInput').value                 = '';
-        document.getElementById('timelineInput').value               = '';
-        document.getElementById('negotiationAmtInput').value         = '';
-        document.getElementById('revisedDocInput').value             = '';
+        document.getElementById('actionRevisedDoc').style.display     = 'none';
+        document.getElementById('actionWonForm').style.display        = 'none';
+        document.getElementById('tokenFields').style.display          = 'none';
+        document.getElementById('actionType').value                   = '';
+        document.getElementById('proposalInput').value                = '';
+        document.getElementById('amountInput').value                  = '';
+        document.getElementById('timelineInput').value                = '';
+        document.getElementById('negotiationAmtInput').value          = '';
+        document.getElementById('revisedDocInput').value              = '';
+        if (document.getElementById('tokenNo')) document.getElementById('tokenNo').checked = true;
 
         let actionType = document.getElementById('actionType');
         actionType.innerHTML = '<option value="">Select</option>';
@@ -594,13 +778,16 @@ document.addEventListener('DOMContentLoaded', function() {
         let status = document.getElementById('leadStatus').value;
 
         // Reset all conditional fields
-        document.getElementById('actionDate').style.display          = 'none';
-        document.getElementById('actionTime').style.display          = 'none';
-        document.getElementById('actionProposal').style.display      = 'none';
-        document.getElementById('actionAmount').style.display        = 'none';
-        document.getElementById('actionTimeline').style.display      = 'none';
+        document.getElementById('actionDate').style.display           = 'none';
+        document.getElementById('actionTime').style.display           = 'none';
+        document.getElementById('actionProposal').style.display       = 'none';
+        document.getElementById('actionAmount').style.display         = 'none';
+        document.getElementById('actionTimeline').style.display       = 'none';
         document.getElementById('actionNegotiationAmt').style.display = 'none';
-        document.getElementById('actionRevisedDoc').style.display    = 'none';
+        document.getElementById('actionRevisedDoc').style.display     = 'none';
+        document.getElementById('actionWonForm').style.display        = 'none';
+        document.getElementById('tokenFields').style.display          = 'none';
+        if (document.getElementById('tokenNo')) document.getElementById('tokenNo').checked = true;
 
         if (status === 'call_schedule' || status === 'call_back_required') {
             if (val !== 'lost' && val !== '') {
@@ -612,14 +799,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('actionProposal').style.display = 'block';
                 document.getElementById('actionAmount').style.display   = 'block';
                 document.getElementById('actionTimeline').style.display = 'block';
+            } else if (val === 'lost') {
+                document.getElementById('actionDate').style.display = 'block';
+                document.getElementById('actionTime').style.display = 'block';
             }
         } else if (status === 'proposal_sent') {
-            if (val === 'won' || val === 'negotiation') {
-                // Won / Negotiation → Negotiation Amt + Revised Proposal + Comment
+            if (val === 'won') {
+                document.getElementById('actionWonForm').style.display = 'block';
+            } else if (val === 'negotiation') {
                 document.getElementById('actionNegotiationAmt').style.display = 'block';
                 document.getElementById('actionRevisedDoc').style.display     = 'block';
             }
-            // Lost / On Hold → sirf Comment (always visible)
+            // lost / on_hold → sirf comment
         } else {
             if (val === 'reschedule') {
                 document.getElementById('actionDate').style.display = 'block';
@@ -627,6 +818,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // ─── Token Fields Toggle ─────────────────────────────────────────
+    window.toggleTokenFields = function(show) {
+        document.getElementById('tokenFields').style.display = show ? 'block' : 'none';
+    };
 
     // ─── Add Lead Modal reset ────────────────────────────────────────
     document.getElementById('addLeadModal').addEventListener('hidden.bs.modal', function() {
