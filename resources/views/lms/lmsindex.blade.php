@@ -27,7 +27,7 @@ svg.w-5.h-5 { display: none; }
     $showProposalCols   = $isProposalSent;
     $showLostCols       = $isLost;
     $isWon = $currentStatus === 'won';
-$showWonCols = $isWon;
+    $showWonCols = $isWon;
 @endphp
 
 {{-- Status Tabs --}}
@@ -135,186 +135,197 @@ $showWonCols = $isWon;
 <div class="card-dark" style="overflow: hidden; padding-bottom: 0;">
     <div style="overflow-x: auto;">
         <table class="table table-dark table-bordered mb-0" style="white-space: nowrap;">
-           <thead>
-    <tr>
-        <th>Sno.</th>
-        <th>Full Name</th>
-        <th>Contact</th>
-        @if(!$showProposalCols && !$showLostCols && !$showWonCols)
-        <th>Email</th>
-        @endif
-        @if($showWonCols)
-        <th>Email</th>
-        <th>Business Name</th>
-        @endif
-        <th>City</th>
-        @if($showQualifiedCols || $showProposalCols || $showLostCols)
-            <th>State</th>
-        @endif
-        @if(!$showProposalCols && !$showLostCols && !$showWonCols)
-            <th>Requirement</th>
-        @endif
-        @if($showExtraCols)
-            <th>Date</th>
-            <th>Time</th>
-            <th>Comment</th>
-        @endif
-        @if($showQualifiedCols)
-            <th>Date</th>
-            <th>Time</th>
-        @endif
-        @if($showProposalCols)
-            <th>Proposal Amount</th>
-            <th>Timeline</th>
-            <th>Sent Date</th>
-            <th>Negotiation Amt</th>
-            <th>Proposal Doc</th>
-        @endif
-        @if($showLostCols)
-            <th>Comment</th>
-            <th>Lost Date</th>
-        @endif
-        @if($showWonCols)
-            <th>Project Cost</th>
-            <th>Timeline</th>
-            <th>Milestone</th>
-            <th>Token Received</th>
-        @endif
-        <th>Status</th>
-        @if(!$showLostCols && !$showWonCols)
-        <th>Add Date</th>
-        @endif
-        <th>Action</th>
-    </tr>
-</thead>
+            <thead>
+                <tr>
+                    <th>Sno.</th>
+                    <th>Full Name</th>
+                    <th>Contact</th>
+                    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+                    <th>Email</th>
+                    @endif
+                    @if($showWonCols)
+                    <th>Email</th>
+                    <th>Business Name</th>
+                    @endif
+                    <th>City</th>
+                    @if($showQualifiedCols || $showProposalCols || $showLostCols)
+                        <th>State</th>
+                    @endif
+                    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+                        <th>Requirement</th>
+                    @endif
+                    @if($showExtraCols)
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Comment</th>
+                    @endif
+                    @if($showQualifiedCols)
+                        <th>Date</th>
+                        <th>Time</th>
+                    @endif
+                    @if($showProposalCols)
+                        <th>Proposal Amount</th>
+                        <th>Timeline</th>
+                        <th>Sent Date</th>
+                        <th>Negotiation Amt</th>
+                        <th>Proposal Doc</th>
+                    @endif
+                    @if($showLostCols)
+                        <th>Comment</th>
+                        <th>Lost Date</th>
+                    @endif
+                    @if($showWonCols)
+                        <th>Project Cost</th>
+                        <th>Timeline</th>
+                        <th>Milestone</th>
+                        <th>Token Received</th>
+                    @endif
+                    <th>Status</th>
+                    @if(!$showLostCols && !$showWonCols)
+                    <th>Add Date</th>
+                    @endif
+                    <th style="position:sticky; right:0; background:#212529; z-index:2;">Action</th>
+                </tr>
+            </thead>
             <tbody>
                 @forelse($leads as $lead)
-               <tr>
-    <td>{{ ($leads->currentPage() - 1) * $leads->perPage() + $loop->iteration }}</td>
-    <td>{{ $lead->first_name }} {{ $lead->last_name }}</td>
-    <td>{{ $lead->contact_number }}</td>
-    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
-    <td>{{ $lead->email ?? '-' }}</td>
-    @endif
-    @if($showWonCols)
-    <td>{{ $lead->won_email ?? $lead->email ?? '-' }}</td>
-    <td>{{ $lead->won_business_name ?? '-' }}</td>
-    @endif
-    <td>{{ $lead->won_city ?? $lead->city ?? '-' }}</td>
-    @if($showQualifiedCols || $showProposalCols || $showLostCols)
-        <td>{{ $lead->state ?? '-' }}</td>
-    @endif
-    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
-        <td>{{ $lead->Requirement ?? '-' }}</td>
-    @endif
-    @if($showExtraCols)
-        <td>{{ $lead->date ?? '-' }}</td>
-        <td>{{ $lead->time ?? '-' }}</td>
-        <td>{{ $lead->comment ?? '-' }}</td>
-    @endif
-    @if($showQualifiedCols)
-        <td>{{ $lead->date ?? '-' }}</td>
-        <td>{{ $lead->time ?? '-' }}</td>
-    @endif
-    @if($showProposalCols)
-        <td>{{ $lead->amount ? '₹'.number_format($lead->amount, 2) : '-' }}</td>
-        <td>{{ $lead->timeline ?? '-' }}</td>
-        <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
-        <td>{{ $lead->negotiation_amount ? '₹'.number_format($lead->negotiation_amount, 2) : '-' }}</td>
-        <td>
-            @if($lead->proposal_document)
-                <a href="{{ asset('storage/'.$lead->proposal_document) }}"
-                   target="_blank" class="btn btn-sm"
-                   style="background:#6f42c1;color:#fff;font-size:11px;padding:3px 8px;">
-                   📄 View
-                </a>
-            @else
-                -
-            @endif
-        </td>
-    @endif
-    @if($showLostCols)
-        <td>{{ $lead->comment ?? '-' }}</td>
-        <td>{{ $lead->updated_at ? $lead->updated_at->format('d-m-Y') : '-' }}</td>
-    @endif
-    @if($showWonCols)
-        <td>{{ $lead->won_final_cost ? '₹'.number_format($lead->won_final_cost, 2) : '-' }}</td>
-        <td>{{ $lead->won_timeline ?? '-' }}</td>
-        <td>{{ $lead->won_milestone ?? '-' }}</td>
-        <td>
-            @if($lead->won_token_received === 'yes')
-                <span class="badge bg-success">Yes</span>
-            @elseif($lead->won_token_received === 'no')
-                <span class="badge bg-secondary">No</span>
-            @else
-                -
-            @endif
-        </td>
-    @endif
-    <td>
-        <span class="badge
-            @if($lead->status == 'won') bg-success
-            @elseif($lead->status == 'lost') bg-danger
-            @elseif($lead->status == 'not_interested') bg-danger
-            @elseif($lead->status == 'not_in_scope') bg-danger
-            @elseif($lead->status == 'call_schedule') bg-primary
-            @elseif($lead->status == 'call_back_required') bg-warning text-dark
-            @elseif($lead->status == 'not_responded') bg-secondary
-            @elseif($lead->status == 'qualified') bg-info text-dark
-            @elseif($lead->status == 'proposal_sent') bg-purple text-white
-            @elseif($lead->status == 'on_hold') bg-warning text-dark
-            @elseif($lead->status == 'negotiation') bg-info text-dark
-            @else bg-secondary
-            @endif">
-            {{ ucwords(str_replace('_', ' ', $lead->status)) }}
-        </span>
-    </td>
-    @if(!$showLostCols && !$showWonCols)
-    <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
-    @endif
-    <td style="white-space:nowrap; vertical-align:middle;">
-        <div class="d-flex gap-1">
-            <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info" title="View">
-                <i class="fas fa-eye"></i>
-            </a>
-            <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning" title="Edit">
-                <i class="fas fa-pen"></i>
-            </a>
-            @if(!$showLostCols && !$showWonCols && in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent']))
-                <button class="btn btn-sm btn-success" title="Action"
-                    data-bs-toggle="modal" data-bs-target="#actionModal"
-                    onclick="setLead({{ $lead->id }}, '{{ $lead->status }}')">
-                    <i class="fas fa-bolt"></i>
-                </button>
-            @elseif(!$showLostCols && !$showWonCols)
-                <button class="btn btn-sm btn-success" disabled title="Action"
-                    style="opacity:0.4;cursor:not-allowed;">
-                    <i class="fas fa-bolt"></i>
-                </button>
-            @endif
-            <button class="btn btn-sm btn-primary" title="History"
-                data-bs-toggle="modal" data-bs-target="#historyModal"
-                onclick="loadHistory({{ $lead->id }})">
-                <i class="fas fa-history"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-danger" title="Delete"
-                onclick="confirmDelete({{ $lead->id }})">
-                <i class="fas fa-trash"></i>
-            </button>
-            <form id="deleteForm{{ $lead->id }}"
-                  action="{{ route('admin.lms.destroy', $lead->id) }}"
-                  method="POST" style="display:none;">
-                @csrf
-                @method('DELETE')
-            </form>
-        </div>
-    </td>
-</tr>
+                <tr>
+                    <td>{{ ($leads->currentPage() - 1) * $leads->perPage() + $loop->iteration }}</td>
+                    <td>{{ $lead->first_name }} {{ $lead->last_name }}</td>
+                    <td>{{ $lead->contact_number }}</td>
+                    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+                    <td>{{ $lead->email ?? '-' }}</td>
+                    @endif
+                    @if($showWonCols)
+                    <td>{{ $lead->won_email ?? $lead->email ?? '-' }}</td>
+                    <td>{{ $lead->won_business_name ?? '-' }}</td>
+                    @endif
+                    <td>{{ $lead->won_city ?? $lead->city ?? '-' }}</td>
+                    @if($showQualifiedCols || $showProposalCols || $showLostCols)
+                        <td>{{ $lead->state ?? '-' }}</td>
+                    @endif
+                    @if(!$showProposalCols && !$showLostCols && !$showWonCols)
+                        <td>{{ $lead->Requirement ?? '-' }}</td>
+                    @endif
+                    @if($showExtraCols)
+                        <td>{{ $lead->date ?? '-' }}</td>
+                        <td>{{ $lead->time ?? '-' }}</td>
+                        <td>{{ $lead->comment ?? '-' }}</td>
+                    @endif
+                    @if($showQualifiedCols)
+                        <td>{{ $lead->date ?? '-' }}</td>
+                        <td>{{ $lead->time ?? '-' }}</td>
+                    @endif
+                    @if($showProposalCols)
+                        <td>{{ $lead->amount ? '₹'.number_format($lead->amount, 2) : '-' }}</td>
+                        <td>{{ $lead->timeline ?? '-' }}</td>
+                        <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
+                        <td>{{ $lead->negotiation_amount ? '₹'.number_format($lead->negotiation_amount, 2) : '-' }}</td>
+                        <td>
+                            @if($lead->proposal_document)
+                                <a href="{{ asset('storage/'.$lead->proposal_document) }}"
+                                   target="_blank" class="btn btn-sm"
+                                   style="background:#6f42c1;color:#fff;font-size:11px;padding:3px 8px;">
+                                   📄 View
+                                </a>
+                            @else
+                                -
+                            @endif
+                        </td>
+                    @endif
+                    @if($showLostCols)
+                        <td>{{ $lead->comment ?? '-' }}</td>
+                        <td>{{ $lead->updated_at ? $lead->updated_at->format('d-m-Y') : '-' }}</td>
+                    @endif
+                    @if($showWonCols)
+                        <td>{{ $lead->won_final_cost ? '₹'.number_format($lead->won_final_cost, 2) : '-' }}</td>
+                        <td>{{ $lead->won_timeline ?? '-' }}</td>
+                        <td>{{ $lead->won_milestone ?? '-' }}</td>
+                        <td>
+                            @if($lead->won_token_received === 'yes')
+                                <span class="badge bg-success">Yes</span>
+                            @elseif($lead->won_token_received === 'no')
+                                <span class="badge bg-secondary">No</span>
+                            @else
+                                -
+                            @endif
+                        </td>
+                    @endif
+                    <td>
+                        <span class="badge
+                            @if($lead->status == 'won') bg-success
+                            @elseif($lead->status == 'lost') bg-danger
+                            @elseif($lead->status == 'not_interested') bg-danger
+                            @elseif($lead->status == 'not_in_scope') bg-danger
+                            @elseif($lead->status == 'call_schedule') bg-primary
+                            @elseif($lead->status == 'call_back_required') bg-warning text-dark
+                            @elseif($lead->status == 'not_responded') bg-secondary
+                            @elseif($lead->status == 'qualified') bg-info text-dark
+                            @elseif($lead->status == 'proposal_sent') bg-purple text-white
+                            @elseif($lead->status == 'on_hold') bg-warning text-dark
+                            @elseif($lead->status == 'negotiation') bg-info text-dark
+                            @else bg-secondary
+                            @endif">
+                            {{ ucwords(str_replace('_', ' ', $lead->status)) }}
+                        </span>
+                    </td>
+                    @if(!$showLostCols && !$showWonCols)
+                    <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
+                    @endif
+                    <td style="position:sticky; right:0; background:#212529; white-space:nowrap; vertical-align:middle;">
+                        <div class="d-flex gap-1">
+                            <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            @if(!$showLostCols && !$showWonCols && in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent','negotiation']))
+                                {{-- ✅ CHANGE 2: setLead mein lead data bhi pass kiya autofill ke liye --}}
+                                <button class="btn btn-sm btn-success" title="Action"
+                                    data-bs-toggle="modal" data-bs-target="#actionModal"
+                                    onclick="setLead({{ $lead->id }}, '{{ $lead->status }}', {
+                                        name: '{{ addslashes(trim($lead->first_name . ' ' . $lead->last_name)) }}',
+                                        contact: '{{ $lead->contact_number }}',
+                                        email: '{{ addslashes($lead->email ?? '') }}',
+                                        city: '{{ addslashes($lead->city ?? '') }}',
+                                        state: '{{ addslashes($lead->state ?? '') }}',
+                                        country: '{{ addslashes($lead->country ?? '') }}'
+                                    })">
+                                    <i class="fas fa-bolt"></i>
+                                </button>
+                            @elseif(!$showLostCols && !$showWonCols)
+                                <button class="btn btn-sm btn-success" disabled title="Action"
+                                    style="opacity:0.4;cursor:not-allowed;">
+                                    <i class="fas fa-bolt"></i>
+                                </button>
+                            @endif
+                            <button class="btn btn-sm btn-primary" title="History"
+                                data-bs-toggle="modal" data-bs-target="#historyModal"
+                                onclick="loadHistory({{ $lead->id }})">
+                                <i class="fas fa-history"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" title="Delete"
+                                onclick="confirmDelete({{ $lead->id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {{-- ✅ CHANGE 1: Delete form mein redirect_status aur redirect_type add kiya --}}
+                            <form id="deleteForm{{ $lead->id }}"
+                                  action="{{ route('admin.lms.destroy', $lead->id) }}"
+                                  method="POST" style="display:none;">
+                                @csrf
+                                @method('DELETE')
+                                <input type="hidden" name="redirect_status" value="{{ $currentStatus }}">
+                                <input type="hidden" name="redirect_type" value="{{ $currentType }}">
+                            </form>
+                        </div>
+                    </td>
+                </tr>
                 @empty
                 <tr>
                     <td colspan="{{ $showLostCols ? 8 : ($showWonCols ? 10 : ($showExtraCols ? 11 : ($showQualifiedCols ? 11 : ($showProposalCols ? 12 : 9)))) }}" class="text-center text-muted">
-    No leads found
-</td>
+                        No leads found
+                    </td>
                 </tr>
                 @endforelse
             </tbody>
@@ -479,9 +490,7 @@ $showWonCols = $isWon;
                         <small class="text-muted">PDF, DOC, DOCX allowed</small>
                     </div>
 
-                    {{-- ═══════════════════════════════════════════ --}}
-                    {{-- WON FORM (proposal_sent → won)             --}}
-                    {{-- ═══════════════════════════════════════════ --}}
+                    {{-- WON FORM --}}
                     <div id="actionWonForm" style="display:none;">
                         <hr style="border-color:#333;">
                         <p style="color:#f0c040; font-weight:700; font-size:14px; margin-bottom:14px;">
@@ -490,15 +499,15 @@ $showWonCols = $isWon;
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <label class="form-label">Name <span class="text-danger">*</span></label>
-                                <input type="text" name="won_name" class="form-control" placeholder="Full Name">
+                                <input type="text" name="won_name" id="wonName" class="form-control" placeholder="Full Name">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Contact No <span class="text-danger">*</span></label>
-                                <input type="text" name="won_contact" class="form-control" placeholder="Contact Number">
+                                <input type="text" name="won_contact" id="wonContact" class="form-control" placeholder="Contact Number">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" name="won_email" class="form-control" placeholder="Email">
+                                <input type="email" name="won_email" id="wonEmail" class="form-control" placeholder="Email">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Designation</label>
@@ -514,15 +523,15 @@ $showWonCols = $isWon;
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Location</label>
-                                <input type="text" name="won_location" class="form-control" placeholder="Location / Address">
+                                <input type="text" name="won_location" id="wonLocation" class="form-control" placeholder="Location / Address">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Country</label>
-                                <input type="text" name="won_country" class="form-control" placeholder="Country">
+                                <input type="text" name="won_country" id="wonCountry" class="form-control" placeholder="Country">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">State</label>
-                                <select name="won_state" class="form-select">
+                                <select name="won_state" id="wonState" class="form-select">
                                     <option value="">— Select State —</option>
                                     @foreach(['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Jammu & Kashmir','Ladakh','Chandigarh','Puducherry'] as $st)
                                         <option value="{{ $st }}">{{ $st }}</option>
@@ -531,7 +540,7 @@ $showWonCols = $isWon;
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">City</label>
-                                <input type="text" name="won_city" class="form-control" placeholder="City">
+                                <input type="text" name="won_city" id="wonCity" class="form-control" placeholder="City">
                             </div>
                         </div>
 
@@ -556,8 +565,6 @@ $showWonCols = $isWon;
                                 <label class="form-label">Timeline <span class="text-danger">*</span></label>
                                 <input type="text" name="won_timeline" class="form-control" placeholder="e.g. 2 months">
                             </div>
-
-                            {{-- Token Received --}}
                             <div class="col-md-6">
                                 <label class="form-label">Token Received?</label>
                                 <div class="d-flex gap-4 mt-1">
@@ -573,8 +580,6 @@ $showWonCols = $isWon;
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Token Fields (visible only when Yes) --}}
                             <div id="tokenFields" class="col-12" style="display:none;">
                                 <div class="row g-2">
                                     <div class="col-md-6">
@@ -582,7 +587,7 @@ $showWonCols = $isWon;
                                         <input type="number" name="won_token_amount" class="form-control" placeholder="Enter token amount (₹)">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Amount Type</label>
+                                        <label class="form-label">GST Type</label>
                                         <select name="won_amount_type" class="form-select">
                                             <option value="">— Select —</option>
                                             <option value="with_gst">With GST</option>
@@ -593,22 +598,9 @@ $showWonCols = $isWon;
                                         <label class="form-label">Received Date <span class="text-danger">*</span></label>
                                         <input type="date" name="won_received_date" class="form-control">
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">GST Type</label>
-                                        <select name="won_gst_type" class="form-select">
-                                            <option value="">— Select —</option>
-                                            <option value="IGST">IGST</option>
-                                            <option value="CGST_SGST">CGST + SGST</option>
-                                            <option value="UTGST">UTGST</option>
-                                            <option value="exempt">Exempt</option>
-                                        </select>
-                                    </div>
                                 </div>
                             </div>
-                            {{-- End Token Fields --}}
-
                         </div>
-                        {{-- End Project Details row --}}
                     </div>
                     {{-- End Won Form --}}
 
@@ -724,11 +716,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ─── setLead ─────────────────────────────────────────────────────
-    window.setLead = function(id, status) {
+    // ✅ CHANGE 2: leadData parameter add kiya - won form autofill ke liye
+    window.setLead = function(id, status, leadData) {
+        leadData = leadData || {};
+
         document.getElementById('leadId').value     = id;
         document.getElementById('leadStatus').value = status;
 
-        // Reset all fields
         document.getElementById('actionDate').style.display           = 'none';
         document.getElementById('actionTime').style.display           = 'none';
         document.getElementById('actionProposal').style.display       = 'none';
@@ -745,6 +739,26 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('negotiationAmtInput').value          = '';
         document.getElementById('revisedDocInput').value              = '';
         if (document.getElementById('tokenNo')) document.getElementById('tokenNo').checked = true;
+
+        // ✅ Won form fields autofill karo lead data se
+        document.getElementById('wonName').value    = leadData.name    || '';
+        document.getElementById('wonContact').value = leadData.contact || '';
+        document.getElementById('wonEmail').value   = leadData.email   || '';
+        document.getElementById('wonCity').value    = leadData.city    || '';
+        document.getElementById('wonCountry').value = leadData.country || '';
+        document.getElementById('wonLocation').value = leadData.city   || '';
+
+        // State select autofill
+        var wonStateEl = document.getElementById('wonState');
+        wonStateEl.value = '';
+        if (leadData.state) {
+            for (var i = 0; i < wonStateEl.options.length; i++) {
+                if (wonStateEl.options[i].value === leadData.state) {
+                    wonStateEl.selectedIndex = i;
+                    break;
+                }
+            }
+        }
 
         let actionType = document.getElementById('actionType');
         actionType.innerHTML = '<option value="">Select</option>';
@@ -777,7 +791,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let val    = this.value;
         let status = document.getElementById('leadStatus').value;
 
-        // Reset all conditional fields
         document.getElementById('actionDate').style.display           = 'none';
         document.getElementById('actionTime').style.display           = 'none';
         document.getElementById('actionProposal').style.display       = 'none';
@@ -790,7 +803,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (document.getElementById('tokenNo')) document.getElementById('tokenNo').checked = true;
 
         if (status === 'call_schedule' || status === 'call_back_required') {
-            if (val !== 'lost' && val !== '') {
+            if (val !== 'lost' && val !== '' && val !== 'qualified') {
                 document.getElementById('actionDate').style.display = 'block';
                 document.getElementById('actionTime').style.display = 'block';
             }
@@ -810,7 +823,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('actionNegotiationAmt').style.display = 'block';
                 document.getElementById('actionRevisedDoc').style.display     = 'block';
             }
-            // lost / on_hold → sirf comment
         } else {
             if (val === 'reschedule') {
                 document.getElementById('actionDate').style.display = 'block';
@@ -897,6 +909,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div style="position:absolute; left:15px; top:0; bottom:0; width:2px; background:#2a2a2a;"></div>`;
 
                 history.forEach((item, index) => {
+
+                    // ─── edited entries skip karo ───
+                    if (item.event_type === 'edited') return;
+
                     const isLast  = index === history.length - 1;
                     const dotClr  = statusColor[item.to_status] || '#aaa';
                     const sec     = sectionInfo[item.event_type] || { icon: '📌', color: '#aaa' };
@@ -906,16 +922,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     let sectionName = '';
                     if (item.event_type === 'created') {
                         sectionName = 'New Lead';
-                    } else if (item.event_type === 'edited') {
-                        sectionName = 'Lead Edited';
                     } else {
-                        if (item.to_status === 'qualified')                                          sectionName = 'Qualified';
-                        else if (item.to_status === 'proposal_sent')                                 sectionName = 'Proposal Sent';
-                        else if (item.to_status === 'won')                                           sectionName = 'Won';
-                        else if (item.to_status === 'negotiation')                                   sectionName = 'Negotiation';
-                        else if (item.to_status === 'on_hold')                                       sectionName = 'On Hold';
-                        else if (['lost','not_interested','not_in_scope'].includes(item.to_status))  sectionName = 'Lost';
-                        else                                                                          sectionName = 'Follow Up';
+                        if (item.to_status === 'qualified')                                         sectionName = 'Qualified';
+                        else if (item.to_status === 'proposal_sent')                                sectionName = 'Proposal Sent';
+                        else if (item.to_status === 'won')                                          sectionName = 'Won';
+                        else if (item.to_status === 'negotiation')                                  sectionName = 'Negotiation';
+                        else if (item.to_status === 'on_hold')                                      sectionName = 'On Hold';
+                        else if (['lost','not_interested','not_in_scope'].includes(item.to_status)) sectionName = 'Lost';
+                        else                                                                         sectionName = 'Follow Up';
                     }
 
                     let heading = `<span style="color:${sec.color}; font-weight:700; font-size:14px;">${sec.icon} ${sectionName}</span>`;
@@ -933,7 +947,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </span>`;
                     }
 
+                    // ─── Fields ───────────────────────────────────────
                     let fields = '';
+
                     if (item.date) {
                         fields += `
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
@@ -942,6 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong style="color:#fff; font-size:13px;">${item.date}</strong>
                         </div>`;
                     }
+
                     if (item.time) {
                         fields += `
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
@@ -950,6 +967,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong style="color:#fff; font-size:13px;">${item.time}</strong>
                         </div>`;
                     }
+
                     if (item.negotiation_amount) {
                         fields += `
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
@@ -958,6 +976,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong style="color:#fff; font-size:13px;">₹${item.negotiation_amount}</strong>
                         </div>`;
                     }
+
                     if (item.comment) {
                         fields += `
                         <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:8px;">
@@ -966,6 +985,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span style="color:#ddd; font-size:13px; line-height:1.5;">${item.comment}</span>
                         </div>`;
                     }
+
                     if (item.document) {
                         fields += `
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
@@ -976,6 +996,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                View Document ↗</a>
                         </div>`;
                     }
+
                     if (item.revised_document) {
                         fields += `
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
@@ -987,6 +1008,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>`;
                     }
 
+                    // ─── created_at HAR ENTRY MEIN - SABSE NEECHE ────
+                    fields += `
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px; margin-top:4px;">
+                        <span style="font-size:14px; width:20px; text-align:center;">🕒</span>
+                        <span style="color:#666; font-size:11px; font-weight:600; min-width:70px;">On :</span>
+                        <strong style="color:#888; font-size:11px;">${item.created_at}</strong>
+                    </div>`;
+
                     html += `
                     <div style="position:relative; margin-bottom:${isLast ? '4px' : '22px'};">
                         <div style="position:absolute; left:-30px; top:13px;
@@ -996,10 +1025,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div style="background:#1a1a1a; border:1px solid #2a2a2a;
                             border-left:4px solid ${sec.color}; border-radius:8px; padding:13px 16px;">
                             <div style="display:flex; align-items:center; flex-wrap:wrap;
-                                gap:4px; margin-bottom:${fields ? '12px' : '0'};">
+                                gap:4px; margin-bottom:12px;">
                                 ${heading}
                             </div>
-                            ${fields ? `<div style="border-top:1px solid #2a2a2a; padding-top:12px;">${fields}</div>` : ''}
+                            <div style="border-top:1px solid #2a2a2a; padding-top:12px;">${fields}</div>
                         </div>
                     </div>`;
                 });

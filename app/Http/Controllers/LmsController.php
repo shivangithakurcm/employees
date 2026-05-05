@@ -104,7 +104,6 @@ class LmsController extends Controller
             'discussion'     => $request->discussion,
         ]);
 
-        // ✅ History: lead created — user ka comment save karo, koi hardcode nahi
         LeadHistory::create([
             'lead_id'     => $lead->id,
             'event_type'  => 'created',
@@ -112,7 +111,7 @@ class LmsController extends Controller
             'to_status'   => $lead->status,
             'date'        => $request->date   ?? null,
             'time'        => $request->time   ?? null,
-            'comment'     => $request->comment ?? null,  // ✅ user ka comment, 'Lead added' nahi
+            'comment'     => $request->comment ?? null,
             'document'    => null,
         ]);
 
@@ -149,7 +148,7 @@ class LmsController extends Controller
             'comment'        => 'nullable|string',
         ]);
 
-        $oldStatus = $lm->status;
+        $oldStatus  = $lm->status;
         $discussion = $request->input('discussion') === 'draft' ? 'draft' : 'add';
 
         $lm->update([
@@ -169,137 +168,191 @@ class LmsController extends Controller
             'discussion'     => $discussion,
         ]);
 
-        // ✅ Sirf status change hone pe history banao
-        // Same status pe edit ki toh history nahi banegi
-        LeadHistory::create([
-    'lead_id'     => $lm->id,
-    'event_type'  => $oldStatus !== $request->status ? 'status_changed' : 'edited',
-    'from_status' => $oldStatus,
-    'to_status'   => $request->status,
-    'date'        => $request->date   ?? null,
-    'time'        => $request->time   ?? null,
-    'comment'     => $request->comment ?? null,
-    'document'    => null,
-]);
-        
+        // ─── File Uploads ───────────────────────────────────────────
+        if ($request->hasFile('proposal_document')) {
+            $lm->proposal_document = $request->file('proposal_document')->store('proposals', 'public');
+        }
+        if ($request->hasFile('revised_proposal')) {
+            $lm->revised_proposal = $request->file('revised_proposal')->store('proposals', 'public');
+        }
 
-        return redirect()->route('admin.lms.index')->with('success', 'Lead updated successfully!');
-    }
+        // ─── Proposal Fields ────────────────────────────────────────
+        $lm->amount             = $request->amount;
+        $lm->timeline           = $request->timeline;
+        $lm->negotiation_amount = $request->negotiation_amount;
 
-    // ─── DESTROY ─────────────────────────────────────────────────────
-    public function destroy(Lead $lm)
-    {
-        $lm->delete();
-        return redirect()->route('admin.lms.index')->with('success', 'Lead deleted!');
-    }
+        // ─── Won Fields ─────────────────────────────────────────────
+        $lm->won_name           = $request->won_name;
+        $lm->won_contact        = $request->won_contact;
+        $lm->won_email          = $request->won_email;
+        $lm->won_designation    = $request->won_designation;
+        $lm->won_business_name  = $request->won_business_name;
+        $lm->won_gst_no         = $request->won_gst_no;
+        $lm->won_location       = $request->won_location;
+        $lm->won_country        = $request->won_country;
+        $lm->won_state          = $request->won_state;
+        $lm->won_city           = $request->won_city;
+        $lm->won_project_detail = $request->won_project_detail;
+        $lm->won_final_cost     = $request->won_final_cost;
+        $lm->won_milestone      = $request->won_milestone;
+        $lm->won_timeline       = $request->won_timeline;
+        $lm->won_token_received = $request->won_token_received;
 
-    // ─── ACTION ──────────────────────────────────────────────────────
-    public function action(Request $request)
-{
-    $lead      = Lead::findOrFail($request->lead_id);
-    $oldStatus = $lead->status;
+        if ($request->won_token_received === 'yes') {
+            $lm->won_token_amount  = $request->won_token_amount;
+            $lm->won_amount_type   = $request->won_amount_type;
+            $lm->won_received_date = $request->won_received_date;
+            $lm->won_gst_type      = $request->won_gst_type;
+        }
 
-    // ✅ Document upload handle karo
-    $documentPath = null;
-    if ($request->hasFile('proposal')) {
-        $documentPath = $request->file('proposal')->store('proposals', 'public');
-        $lead->document = $documentPath;  // ✅ lead table mein bhi save
-    }
+        $lm->save();
 
-    $lead->status  = $request->action_type;
-    $lead->date    = $request->date    ?? null;
-    $lead->time    = $request->time    ?? null;
-    $lead->comment = $request->comment ?? null;
-
-    // ─── Proposal Sent ─────────────────────
-if ($request->action_type === 'proposal_sent') {
-
-    if ($request->hasFile('proposal')) {
-        $path = $request->file('proposal')->store('proposals', 'public');
-        $lead->proposal_document = $path;
-    }
-
-    $lead->amount   = $request->amount;
-    $lead->timeline = $request->timeline;
-}
-
-// ─── Negotiation ───────────────────────
-if ($request->action_type === 'negotiation') {
-
-    if ($request->hasFile('revised_proposal')) {
-        $path = $request->file('revised_proposal')->store('proposals', 'public');
-        $lead->revised_proposal = $path;
-    }
-
-    $lead->negotiation_amount = $request->negotiation_amount;
-}
-
-    if ($request->action_type === 'won') {
-
-    $lead->won_name           = $request->won_name;
-    $lead->won_contact        = $request->won_contact;
-    $lead->won_email          = $request->won_email;
-    $lead->won_designation    = $request->won_designation;
-    $lead->won_business_name  = $request->won_business_name;
-    $lead->won_gst_no         = $request->won_gst_no;
-    $lead->won_location       = $request->won_location;
-
-    $lead->won_country        = $request->won_country;
-    $lead->won_state          = $request->won_state;
-    $lead->won_city           = $request->won_city;
-
-    $lead->won_project_detail = $request->won_project_detail;
-    $lead->won_final_cost     = $request->won_final_cost;
-    $lead->won_milestone      = $request->won_milestone;
-    $lead->won_timeline       = $request->won_timeline;
-
-    $lead->won_token_received = $request->won_token_received;
-
-    if ($request->won_token_received === 'yes') {
-        $lead->won_token_amount  = $request->won_token_amount;
-        $lead->won_amount_type   = $request->won_amount_type;
-        $lead->won_received_date = $request->won_received_date;
-        $lead->won_gst_type      = $request->won_gst_type;
-    }
-}
-    $lead->save();
-
+       if ($oldStatus !== $request->status) {
     LeadHistory::create([
-        'lead_id'     => $lead->id,
+        'lead_id'     => $lm->id,
         'event_type'  => 'status_changed',
         'from_status' => $oldStatus,
-        'to_status'   => $lead->status,
+        'to_status'   => $request->status,
         'date'        => $request->date    ?? null,
         'time'        => $request->time    ?? null,
         'comment'     => $request->comment ?? null,
-        'document'    => $documentPath,    // ✅ history mein bhi save
+        'document'    => null,
     ]);
-
-    return redirect()->back()->with('success', 'Action saved!');
 }
+        $status = $request->status;
+
+// Status ke hisaab se redirect
+if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded'])) {
+    return redirect()->route('admin.lms.index', ['status' => 'follow_up'])->with('success', 'Lead updated successfully!');
+} elseif (in_array($status, ['lost', 'not_interested', 'not_in_scope'])) {
+    return redirect()->route('admin.lms.index', ['status' => 'lost'])->with('success', 'Lead updated successfully!');
+} elseif ($status === 'draft') {
+    return redirect()->route('admin.lms.index', ['status' => 'draft'])->with('success', 'Lead updated successfully!');
+} else {
+    return redirect()->route('admin.lms.index', ['status' => $status])->with('success', 'Lead updated successfully!');
+}
+    }
+
+    // ─── DESTROY ─────────────────────────────────────────────────────
+   public function destroy(Lead $lead)
+{
+    $lead->delete();
+    
+    $params = array_filter([
+        'status' => request('redirect_status'),
+        'type'   => request('redirect_type'),
+    ]);
+    
+    return redirect()->route('admin.lms.index', $params)
+                     ->with('success', 'Lead deleted successfully.');
+}
+
+    // ─── ACTION ──────────────────────────────────────────────────────
+    public function action(Request $request)
+    {
+        $lead      = Lead::findOrFail($request->lead_id);
+        $oldStatus = $lead->status;
+
+        $documentPath = null;
+
+        // ─── Default status set ─────────────────────────────────────
+        // Negotiation pe status proposal_sent hi rahega
+        if ($request->action_type === 'negotiation') {
+            $lead->status = 'proposal_sent';
+        } else {
+            $lead->status = $request->action_type;
+        }
+
+        $lead->date    = $request->date    ?? null;
+        $lead->time    = $request->time    ?? null;
+        $lead->comment = $request->comment ?? null;
+
+        // ─── Proposal Sent ──────────────────────────────────────────
+        if ($request->action_type === 'proposal_sent') {
+            if ($request->hasFile('proposal')) {
+                $path = $request->file('proposal')->store('proposals', 'public');
+                $lead->proposal_document = $path;
+                $documentPath = $path;
+            }
+            $lead->amount   = $request->amount;
+            $lead->timeline = $request->timeline;
+        }
+
+        // ─── Negotiation ────────────────────────────────────────────
+        if ($request->action_type === 'negotiation') {
+            if ($request->hasFile('revised_proposal')) {
+                $path = $request->file('revised_proposal')->store('proposals', 'public');
+                $lead->revised_proposal = $path;
+                $documentPath = $path;
+            }
+            $lead->negotiation_amount = $request->negotiation_amount;
+        }
+
+        // ─── Won ────────────────────────────────────────────────────
+        if ($request->action_type === 'won') {
+            $lead->won_name           = $request->won_name;
+            $lead->won_contact        = $request->won_contact;
+            $lead->won_email          = $request->won_email;
+            $lead->won_designation    = $request->won_designation;
+            $lead->won_business_name  = $request->won_business_name;
+            $lead->won_gst_no         = $request->won_gst_no;
+            $lead->won_location       = $request->won_location;
+            $lead->won_country        = $request->won_country;
+            $lead->won_state          = $request->won_state;
+            $lead->won_city           = $request->won_city;
+            $lead->won_project_detail = $request->won_project_detail;
+            $lead->won_final_cost     = $request->won_final_cost;
+            $lead->won_milestone      = $request->won_milestone;
+            $lead->won_timeline       = $request->won_timeline;
+            $lead->won_token_received = $request->won_token_received;
+
+            if ($request->won_token_received === 'yes') {
+                $lead->won_token_amount  = $request->won_token_amount;
+                $lead->won_amount_type   = $request->won_amount_type;
+                $lead->won_received_date = $request->won_received_date;
+                $lead->won_gst_type      = $request->won_gst_type;
+            }
+        }
+
+        $lead->save();
+
+        LeadHistory::create([
+            'lead_id'     => $lead->id,
+            'event_type'  => 'status_changed',
+            'from_status' => $oldStatus,
+            'to_status'   => $lead->status,
+            'date'        => $request->date    ?? null,
+            'time'        => $request->time    ?? null,
+            'comment'     => $request->comment ?? null,
+            'document'    => $documentPath,
+        ]);
+
+        return redirect()->back()->with('success', 'Action saved!');
+    }
+
     // ─── HISTORY API ─────────────────────────────────────────────────
     public function history($id)
-{
-    $records = LeadHistory::where('lead_id', $id)
-                ->orderBy('created_at', 'asc')
-                ->get();
+    {
+        $records = LeadHistory::where('lead_id', $id)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
 
-    $history = $records->map(function($h) {
-        return [
-            'event_type'  => $h->event_type,
-            'from_status' => $h->from_status,
-            'to_status'   => $h->to_status,
-            'comment'     => $h->comment,
-            'document'    => $h->document ? asset('storage/' . $h->document) : null,  // ✅ full URL
-            'date'        => $h->date,
-            'time'        => $h->time,
-            'created_at'  => $h->created_at->format('d-m-Y H:i:s'),
-        ];
-    });
+        $history = $records->map(function($h) {
+            return [
+                'event_type'  => $h->event_type,
+                'from_status' => $h->from_status,
+                'to_status'   => $h->to_status,
+                'comment'     => $h->comment,
+                'document'    => $h->document ? asset('storage/' . $h->document) : null,
+                'date'        => $h->date,
+                'time'        => $h->time,
+                'created_at'  => $h->created_at->format('d-m-Y H:i:s'),
+            ];
+        });
 
-    return response()->json([
-        'status'  => true,
-        'history' => $history,
-    ]);
-}
+        return response()->json([
+            'status'  => true,
+            'history' => $history,
+        ]);
+    }
 }
