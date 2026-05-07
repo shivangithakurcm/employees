@@ -222,16 +222,22 @@ svg.w-5.h-5 { display: none; }
                         <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
                         <td>{{ $lead->negotiation_amount ? '₹'.number_format($lead->negotiation_amount, 2) : '-' }}</td>
                         <td>
-                            @if($lead->proposal_document)
-                                <a href="{{ asset('storage/'.$lead->proposal_document) }}"
-                                   target="_blank" class="btn btn-sm"
-                                   style="background:#6f42c1;color:#fff;font-size:11px;padding:3px 8px;">
-                                   📄 View
-                                </a>
-                            @else
-                                -
-                            @endif
-                        </td>
+    @if($lead->revised_proposal)
+        <a href="{{ asset('storage/'.$lead->revised_proposal) }}"
+           target="_blank" class="btn btn-sm"
+           style="background:#fd7e14;color:#fff;font-size:11px;padding:3px 8px;">
+           📋 Revised
+        </a>
+    @elseif($lead->proposal_document)
+        <a href="{{ asset('storage/'.$lead->proposal_document) }}"
+           target="_blank" class="btn btn-sm"
+           style="background:#6f42c1;color:#fff;font-size:11px;padding:3px 8px;">
+           📄 View
+        </a>
+    @else
+        -
+    @endif
+</td>
                     @endif
                     @if($showLostCols)
                         <td>{{ $lead->comment ?? '-' }}</td>
