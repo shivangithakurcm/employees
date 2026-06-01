@@ -27,6 +27,7 @@ return new class extends Migration
         $table->string('won_city')->nullable();
 
         // Project Details
+        $table->string('won_project_type')->nullable();
         $table->text('won_project_detail')->nullable();
         $table->decimal('won_final_cost', 12, 2)->nullable();
         $table->string('won_milestone')->nullable();

@@ -87,6 +87,8 @@
                     @endforeach
                 </select>
             </div>
+
+        
             <div class="col-md-4">
                 <label class="form-label">Upload Photo</label>
                 <input type="file" name="photo" class="form-control" accept="image/*">

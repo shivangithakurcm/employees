@@ -203,10 +203,19 @@
             <hr style="border-color:#333; margin-top:16px;">
             <p style="color:#f0c040; font-weight:700; font-size:14px; margin-bottom:14px;">🏗️ Project Details</p>
             <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label">Project Detail</label>
-                    <textarea name="won_project_detail" class="form-control" rows="3">{{ $lm->won_project_detail }}</textarea>
-                </div>
+               <div class="col-md-6">
+                <label class="form-label">Project Type</label>
+                <select name="won_project_type" class="form-select">
+                  <option value="">— Select Type —</option>
+@foreach($projectTypes as $pt)
+    <option value="{{ $pt->id }}" {{ $lm->won_project_type == $pt->id ? 'selected' : '' }}>{{ $pt->name }}</option>
+@endforeach
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Project Detail</label>
+                <textarea name="won_project_detail" class="form-control" rows="3">{{ $lm->won_project_detail }}</textarea>
+            </div>
                 <div class="col-md-4">
                     <label class="form-label">Final Project Cost</label>
                     <input type="number" name="won_final_cost" class="form-control" value="{{ $lm->won_final_cost }}">

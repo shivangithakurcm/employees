@@ -25,6 +25,57 @@
             color: #f0c040; background: #222;
             border-left: 3px solid #f0c040;
         }
+
+        /* Master dropdown styles */
+        .master-toggle {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+        .master-toggle.active-parent {
+            color: #f0c040 !important;
+            background: #222;
+            border-left: 3px solid #f0c040;
+        }
+        .master-submenu {
+            background: #0d0d0d;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.3s ease;
+        }
+        .master-submenu.open {
+            max-height: 200px;
+        }
+        .master-submenu a {
+            padding: 9px 20px 9px 38px;
+            font-size: 13px;
+            color: #999;
+            border-left: none !important;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .master-submenu a:hover {
+            color: #f0c040;
+            background: #1a1a1a;
+            border-left: none !important;
+        }
+        .master-submenu a.active {
+            color: #f0c040;
+            font-weight: 600;
+            background: #1a1a1a;
+            border-left: none !important;
+        }
+        .master-submenu a::before {
+            content: '';
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+        #masterArrow {
+            font-size: 11px;
+            transition: transform 0.3s ease;
+        }
+
         .main-content { margin-left: 220px; padding: 20px; }
         .topbar {
             display: flex; justify-content: space-between;
@@ -73,19 +124,50 @@
 {{-- Sidebar --}}
 <div class="sidebar">
     <div class="brand">ADMIN</div>
+
     <a href="{{ route('admin.dashboard') }}"
        class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
         <i class="fas fa-tachometer-alt me-2"></i> Dashboard
     </a>
+
     <a href="{{ route('admin.employees.index') }}"
-   class="{{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
-    <i class="fas fa-users me-2"></i> Employee
-</a>
-  {{-- ✅ Sahi --}}
-<a href="{{ route('admin.lms.index') }}"
-   class="{{ request()->routeIs('admin.lms.*') ? 'active' : '' }}">
-    <i class="fas fa-chart-line me-2"></i> LMS
-</a>
+       class="{{ request()->routeIs('admin.employees.*') ? 'active' : '' }}">
+        <i class="fas fa-id-badge me-2"></i> Employee
+    </a>
+
+    <a href="{{ route('admin.lms.index') }}"
+       class="{{ request()->routeIs('admin.lms.*') ? 'active' : '' }}">
+        <i class="fas fa-chart-line me-2"></i> LMS
+    </a>
+
+    <a href="{{ route('admin.customers.index') }}"
+       class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+        <i class="fas fa-users me-2"></i> Customers
+    </a>
+
+    {{-- Master Dropdown --}}
+    <a class="master-toggle {{ request()->is('admin/master/*') ? 'active-parent' : '' }}"
+       onclick="toggleMaster()">
+        <span><i class="fas fa-layer-group me-2"></i> Master</span>
+        <i class="fas fa-chevron-down" id="masterArrow"
+           style="transform: {{ request()->is('admin/master/*') ? 'rotate(180deg)' : 'rotate(0deg)' }};"></i>
+    </a>
+
+    <div class="master-submenu {{ request()->is('admin/master/*') ? 'open' : '' }}" id="masterSubmenu">
+        <a href="{{ route('admin.master.designation.index') }}"
+           class="{{ request()->routeIs('admin.master.designation.*') ? 'active' : '' }}">
+            Designation
+        </a>
+        <a href="{{ route('admin.master.project_type.index') }}"
+           class="{{ request()->routeIs('admin.master.project_type.*') ? 'active' : '' }}">
+            Project Type
+        </a>
+        <a href="{{ route('admin.master.shift.index') }}"
+           class="{{ request()->routeIs('admin.master.shift.*') ? 'active' : '' }}">
+            Shift
+        </a>
+    </div>
+
 </div>
 
 {{-- Main Content --}}
@@ -93,51 +175,48 @@
 
     {{-- Topbar --}}
     <div class="topbar">
-    <span style="color:#f0c040">@yield('page-title', 'Dashboard')</span>
+        <span style="color:#f0c040">@yield('page-title', 'Dashboard')</span>
 
-    <div class="d-flex align-items-center gap-3">
-        
-        <!-- Dropdown -->
-        <div class="dropdown">
-            <span class="rounded-circle bg-warning text-dark px-2 py-1 fw-bold dropdown-toggle"
-                  role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                  style="cursor:pointer;">
-                A
-            </span>
-
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <form action="{{ route('logout') }}" method="POST" class="m-0">
-                        @csrf
-                        <button type="submit" class="dropdown-item">Logout</button>
-                    </form>
-                </li>
-            </ul>
+        <div class="d-flex align-items-center gap-3">
+            <div class="dropdown">
+                <span class="rounded-circle bg-warning text-dark px-2 py-1 fw-bold dropdown-toggle"
+                      role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                      style="cursor:pointer;">
+                    A
+                </span>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <form action="{{ route('logout') }}" method="POST" class="m-0">
+                            @csrf
+                            <button type="submit" class="dropdown-item">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
         </div>
-
     </div>
-</div>
 
     {{-- Flash Messages --}}
     @if(session('success'))
-<div id="successToast"
-     style="position:fixed; top:20px; right:20px; z-index:999999;
-            background:#198754; color:#fff; padding:12px 20px;
-            border-radius:8px; font-size:14px; font-weight:500;
-            box-shadow:0 4px 15px rgba(0,0,0,0.4);
-            display:flex; align-items:center; gap:12px;">
-    <i class="fas fa-check-circle"></i>
-    {{ session('success') }}
-    <span onclick="document.getElementById('successToast').remove()"
-          style="cursor:pointer; font-size:16px; line-height:1; opacity:0.8;">✕</span>
-</div>
-<script>
-    setTimeout(function() {
-        var t = document.getElementById('successToast');
-        if (t) t.remove();
-    }, 3000);
-</script>
-@endif
+    <div id="successToast"
+         style="position:fixed; top:20px; right:20px; z-index:999999;
+                background:#198754; color:#fff; padding:12px 20px;
+                border-radius:8px; font-size:14px; font-weight:500;
+                box-shadow:0 4px 15px rgba(0,0,0,0.4);
+                display:flex; align-items:center; gap:12px;">
+        <i class="fas fa-check-circle"></i>
+        {{ session('success') }}
+        <span onclick="document.getElementById('successToast').remove()"
+              style="cursor:pointer; font-size:16px; line-height:1; opacity:0.8;">✕</span>
+    </div>
+    <script>
+        setTimeout(function() {
+            var t = document.getElementById('successToast');
+            if (t) t.remove();
+        }, 3000);
+    </script>
+    @endif
+
     @if($errors->any())
         <div class="alert alert-danger">
             <ul class="mb-0">
@@ -152,6 +231,25 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function toggleMaster() {
+    var menu   = document.getElementById('masterSubmenu');
+    var arrow  = document.getElementById('masterArrow');
+    var toggle = document.querySelector('.master-toggle');
+
+    if (menu.classList.contains('open')) {
+        menu.classList.remove('open');
+        arrow.style.transform = 'rotate(0deg)';
+        toggle.classList.remove('active-parent');
+    } else {
+        menu.classList.add('open');
+        arrow.style.transform = 'rotate(180deg)';
+        toggle.classList.add('active-parent');
+    }
+}
+</script>
+
 @stack('scripts')
 </body>
 </html>

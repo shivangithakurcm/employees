@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lead;
 use App\Models\LeadHistory;
+use App\Models\Master\ProjectType;
 use Illuminate\Http\Request;
 
 class LmsController extends Controller
@@ -47,10 +48,15 @@ class LmsController extends Controller
                 $query->whereIn('status', ['lost', 'not_interested', 'not_in_scope']);
             } else {
                 $query->where('status', $request->status);
+                // ─── Won Project Type Filter ─────────────────────────
+                if ($request->status == 'won' && $request->project_type) {
+                    $query->where('won_project_type', $request->project_type);
+                }
             }
         }
 
-        $leads = $query->latest()->paginate(5);
+        $leads        = $query->latest()->paginate(5);
+        $projectTypes = ProjectType::all();
 
         $counts = [
             'all'                => Lead::where(function($q) {
@@ -66,7 +72,14 @@ class LmsController extends Controller
             'draft'              => Lead::where('discussion', 'draft')->count(),
         ];
 
-        return view('lms.lmsindex', compact('leads', 'counts'));
+        // ─── Won counts per project type ─────────────────────────────
+        foreach ($projectTypes as $pt) {
+            $counts['won_pt_' . $pt->id] = Lead::where('status', 'won')
+                                                ->where('won_project_type', $pt->id)
+                                                ->count();
+        }
+
+        return view('lms.lmsindex', compact('leads', 'counts', 'projectTypes'));
     }
 
     // ─── STORE ───────────────────────────────────────────────────────
@@ -127,7 +140,8 @@ class LmsController extends Controller
     // ─── EDIT ────────────────────────────────────────────────────────
     public function edit(Lead $lm)
     {
-        return view('lms.edit', compact('lm'));
+        $projectTypes = ProjectType::all();
+        return view('lms.edit', compact('lm', 'projectTypes'));
     }
 
     // ─── UPDATE ──────────────────────────────────────────────────────
@@ -192,6 +206,7 @@ class LmsController extends Controller
         $lm->won_country        = $request->won_country;
         $lm->won_state          = $request->won_state;
         $lm->won_city           = $request->won_city;
+        $lm->won_project_type   = $request->won_project_type;
         $lm->won_project_detail = $request->won_project_detail;
         $lm->won_final_cost     = $request->won_final_cost;
         $lm->won_milestone      = $request->won_milestone;
@@ -207,45 +222,47 @@ class LmsController extends Controller
 
         $lm->save();
 
-       if ($oldStatus !== $request->status) {
-    LeadHistory::create([
-        'lead_id'     => $lm->id,
-        'event_type'  => 'status_changed',
-        'from_status' => $oldStatus,
-        'to_status'   => $request->status,
-        'date'        => $request->date    ?? null,
-        'time'        => $request->time    ?? null,
-        'comment'     => $request->comment ?? null,
-        'document'    => null,
-    ]);
-}
+        if ($oldStatus !== $request->status) {
+            LeadHistory::create([
+                'lead_id'     => $lm->id,
+                'event_type'  => 'status_changed',
+                'from_status' => $oldStatus,
+                'to_status'   => $request->status,
+                'date'        => $request->date    ?? null,
+                'time'        => $request->time    ?? null,
+                'comment'     => $request->comment ?? null,
+                'document'    => null,
+            ]);
+        }
+
         $status = $request->status;
 
-// Status ke hisaab se redirect
-if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded'])) {
-    return redirect()->route('admin.lms.index', ['status' => 'follow_up'])->with('success', 'Lead updated successfully!');
-} elseif (in_array($status, ['lost', 'not_interested', 'not_in_scope'])) {
-    return redirect()->route('admin.lms.index', ['status' => 'lost'])->with('success', 'Lead updated successfully!');
-} elseif ($status === 'draft') {
-    return redirect()->route('admin.lms.index', ['status' => 'draft'])->with('success', 'Lead updated successfully!');
-} else {
-    return redirect()->route('admin.lms.index', ['status' => $status])->with('success', 'Lead updated successfully!');
-}
+        if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded'])) {
+            return redirect()->route('admin.lms.index', ['status' => 'follow_up'])->with('success', 'Lead updated successfully!');
+        } elseif (in_array($status, ['lost', 'not_interested', 'not_in_scope'])) {
+            return redirect()->route('admin.lms.index', ['status' => 'lost'])->with('success', 'Lead updated successfully!');
+        } elseif ($status === 'draft') {
+            return redirect()->route('admin.lms.index', ['status' => 'draft'])->with('success', 'Lead updated successfully!');
+        } elseif ($status === 'won') {
+            return redirect()->route('admin.lms.index', ['status' => 'won'])->with('success', 'Lead marked as Won!');
+        } else {
+            return redirect()->route('admin.lms.index', ['status' => $status])->with('success', 'Lead updated successfully!');
+        }
     }
 
     // ─── DESTROY ─────────────────────────────────────────────────────
-   public function destroy(Lead $lead)
-{
-    $lead->delete();
-    
-    $params = array_filter([
-        'status' => request('redirect_status'),
-        'type'   => request('redirect_type'),
-    ]);
-    
-    return redirect()->route('admin.lms.index', $params)
-                     ->with('success', 'Lead deleted successfully.');
-}
+    public function destroy(Lead $lead)
+    {
+        $lead->delete();
+
+        $params = array_filter([
+            'status' => request('redirect_status'),
+            'type'   => request('redirect_type'),
+        ]);
+
+        return redirect()->route('admin.lms.index', $params)
+                         ->with('success', 'Lead deleted successfully.');
+    }
 
     // ─── ACTION ──────────────────────────────────────────────────────
     public function action(Request $request)
@@ -253,10 +270,9 @@ if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded']))
         $lead      = Lead::findOrFail($request->lead_id);
         $oldStatus = $lead->status;
 
-        $documentPath = null;
+        $documentPath        = null;
+        $revisedDocumentPath = null;
 
-        // ─── Default status set ─────────────────────────────────────
-        // Negotiation pe status proposal_sent hi rahega
         if ($request->action_type === 'negotiation') {
             $lead->status = 'proposal_sent';
         } else {
@@ -283,7 +299,7 @@ if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded']))
             if ($request->hasFile('revised_proposal')) {
                 $path = $request->file('revised_proposal')->store('proposals', 'public');
                 $lead->revised_proposal = $path;
-                $documentPath = $path;
+                $revisedDocumentPath = $path;
             }
             $lead->negotiation_amount = $request->negotiation_amount;
         }
@@ -300,6 +316,7 @@ if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded']))
             $lead->won_country        = $request->won_country;
             $lead->won_state          = $request->won_state;
             $lead->won_city           = $request->won_city;
+            $lead->won_project_type   = $request->won_project_type;
             $lead->won_project_detail = $request->won_project_detail;
             $lead->won_final_cost     = $request->won_final_cost;
             $lead->won_milestone      = $request->won_milestone;
@@ -316,16 +333,26 @@ if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded']))
 
         $lead->save();
 
+        // ─── History Save ────────────────────────────────────────────
         LeadHistory::create([
-            'lead_id'     => $lead->id,
-            'event_type'  => 'status_changed',
-            'from_status' => $oldStatus,
-            'to_status'   => $lead->status,
-            'date'        => $request->date    ?? null,
-            'time'        => $request->time    ?? null,
-            'comment'     => $request->comment ?? null,
-            'document'    => $documentPath,
+            'lead_id'            => $lead->id,
+            'event_type'         => 'status_changed',
+            'from_status'        => $oldStatus,
+            'to_status'          => $lead->status,
+            'date'               => $request->date    ?? null,
+            'time'               => $request->time    ?? null,
+            'comment'            => $request->comment ?? null,
+            'document'           => $documentPath,
+            'revised_document'   => $revisedDocumentPath,
+            'negotiation_amount' => $request->action_type === 'negotiation'
+                                        ? $request->negotiation_amount
+                                        : null,
         ]);
+
+        if ($request->action_type === 'won') {
+            return redirect()->route('admin.lms.index', ['status' => 'won'])
+                             ->with('success', '🎉 Lead Won!');
+        }
 
         return redirect()->back()->with('success', 'Action saved!');
     }
@@ -339,14 +366,16 @@ if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded']))
 
         $history = $records->map(function($h) {
             return [
-                'event_type'  => $h->event_type,
-                'from_status' => $h->from_status,
-                'to_status'   => $h->to_status,
-                'comment'     => $h->comment,
-                'document'    => $h->document ? asset('storage/' . $h->document) : null,
-                'date'        => $h->date,
-                'time'        => $h->time,
-                'created_at'  => $h->created_at->format('d-m-Y H:i:s'),
+                'event_type'         => $h->event_type,
+                'from_status'        => $h->from_status,
+                'to_status'          => $h->to_status,
+                'comment'            => $h->comment,
+                'document'           => $h->document         ? asset('storage/' . $h->document)         : null,
+                'revised_document'   => $h->revised_document ? asset('storage/' . $h->revised_document) : null,
+                'negotiation_amount' => $h->negotiation_amount ?? null,
+                'date'               => $h->date,
+                'time'               => $h->time,
+                'created_at'         => $h->created_at->format('d-m-Y H:i:s'),
             ];
         });
 

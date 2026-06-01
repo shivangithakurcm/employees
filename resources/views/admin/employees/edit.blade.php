@@ -77,6 +77,12 @@
                     @endforeach
                 </select>
             </div>
+        <div class="col-md-4">
+    <label class="form-label">Designation</label>
+    <input type="text" name="designation" class="form-control"
+       value="{{ $employee->officialDetail->designation ?? $employee->designation ?? '' }}"
+       placeholder="Type designation...">
+</div>
             <div class="col-md-4">
                 <label class="form-label">Status</label>
                 <select name="status" class="form-select">

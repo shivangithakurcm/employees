@@ -25,15 +25,15 @@
             </div>
             <div class="col-md-6">
                 <label class="form-label">Designation</label>
-                <select name="designation" class="form-select">
-                    <option value="">Select Designation</option>
-                    @foreach(['Manager','Developer','Designer','HR','Accountant','Sales Executive'] as $d)
-                        <option value="{{ $d }}"
-                            {{ ($employee->officialDetail->designation ?? '') == $d ? 'selected' : '' }}>
-                            {{ $d }}
-                        </option>
-                    @endforeach
-                </select>
+               <select name="designation" class="form-select">
+    <option value="">Select Designation</option>
+    @foreach($designations as $d)
+        <option value="{{ $d->name }}" 
+            {{ old('designation', $employee->officialDetail->designation ?? '') == $d->name ? 'selected' : '' }}>
+            {{ $d->name }}
+        </option>
+    @endforeach
+</select>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Salary</label>

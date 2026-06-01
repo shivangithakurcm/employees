@@ -38,10 +38,11 @@ class EmployeeController extends Controller
 }
 
     // Step 1 - Basic Info
-    public function create()
-    {
-        return view('admin.employees.create');
-    }
+   public function create()
+{
+    $designations = \App\Models\Designation::orderBy('name')->get();
+    return view('admin.employees.create', compact('designations'));
+}
 
    public function storeBasicInfo(Request $request)
 {
@@ -64,7 +65,8 @@ class EmployeeController extends Controller
     $employee->date_of_birth = $request->date_of_birth;
     $employee->marital_status = $request->marital_status;
     $employee->blood_group = $request->blood_group;
-
+   $employee->designation = $request->designation;
+    $employee->password = '';
     // SAVE EMPLOYEE FIRST (IMPORTANT)
     $employee->save();
 
@@ -180,32 +182,30 @@ class EmployeeController extends Controller
 }
 
     // Step 5 - Official Details
-    public function step5($id)
-    {
-        $employee = Employee::with('officialDetail')->findOrFail($id);
-        return view('admin.employees.step5', compact('employee'));
+  public function saveStep5(Request $request, $id)
+{
+    $employee = Employee::findOrFail($id);
+
+    // Designation Master mein save karo agar nahi hai
+    if ($request->filled('designation')) {
+        \App\Models\Designation::firstOrCreate(['name' => $request->designation]);
     }
 
-    public function saveStep5(Request $request, $id)
-    {
-        $employee = Employee::findOrFail($id);
+    EmployeeOfficialDetail::updateOrCreate(
+        ['employee_id' => $employee->id],
+        [
+            'doj'         => $request->doj,
+            'designation' => $request->designation,
+            'salary'      => $request->salary,
+            'branch'      => $request->branch,
+            'permission'  => $request->permission,
+            'password'    => bcrypt($request->password),
+        ]
+    );
 
-        EmployeeOfficialDetail::updateOrCreate(
-            ['employee_id' => $employee->id],
-            [
-                'doj'         => $request->doj,
-                'designation' => $request->designation,
-                'salary'      => $request->salary,
-                'branch'      => $request->branch,
-                'permission'  => $request->permission,
-                'password'    => bcrypt($request->password),
-            ]
-        );
-
-        return redirect()->route('admin.employees.index')
-                         ->with('success', 'Employee added successfully!');
-    }
-
+    return redirect()->route('admin.employees.index')
+                     ->with('success', 'Employee added successfully!');
+}
     // View Employee
     public function show($id)
     {
@@ -230,20 +230,31 @@ public function edit($id)
         'officialDetail'
     ])->findOrFail($id);
 
-    return view('admin.employees.edit', compact('employee')); // ✅ $employee
+    $designations = \App\Models\Designation::orderBy('name')->get();
+    return view('admin.employees.edit', compact('employee', 'designations'));
 }
-
     public function update(Request $request, $id)
 {
     $employee = Employee::findOrFail($id);
 
     /* ---------------- BASIC INFO ---------------- */
-    $employee->update($request->only([
-        'name','email','contact','address',
-        'state','city','pincode',
-        'date_of_birth','marital_status','blood_group'
-    ]));
+  $employee->update($request->only([
+    'name','email','contact','address',
+    'state','city','pincode',
+    'date_of_birth','marital_status','blood_group','status'
+]));
 
+// Designation update
+// Designation update - dono jagah save karo
+if ($request->filled('designation')) {
+    $employee->designation = $request->designation;
+    $employee->save();
+
+    \App\Models\EmployeeOfficialDetail::updateOrCreate(
+        ['employee_id' => $employee->id],
+        ['designation' => $request->designation]
+    );
+}
     /* ---------------- PHOTO ---------------- */
     if ($request->hasFile('photo')) {
         $file = $request->file('photo')->store('employees', 'public');

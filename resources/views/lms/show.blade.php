@@ -78,10 +78,22 @@
                 </span>
             </p>
         </div>
-        <div class="col-md-4">
+       <div class="col-md-4">
             <small style="color:#f0c040">Comment</small>
             <p class="text-white mb-0">{{ $lm->comment ?? '-' }}</p>
         </div>
+        @if($lm->status === 'won')
+        <div class="col-md-4">
+            <small style="color:#f0c040">Project Type</small>
+            <p class="text-white mb-0">
+    @if($lm->won_project_type == 'erp') ERP
+    @elseif($lm->won_project_type == 'mobile_app') Mobile App
+    @elseif($lm->won_project_type == 'crm') CRM
+    @else {{ $lm->won_project_type ? ucwords(str_replace('_', ' ', $lm->won_project_type)) : '-' }}
+    @endif
+</p>
+        </div>
+        @endif
         @if($lm->document)
         <div class="col-md-4">
             <small style="color:#f0c040">Proposal Document</small>

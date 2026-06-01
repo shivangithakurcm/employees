@@ -116,6 +116,7 @@ svg.w-5.h-5 { display: none; }
 </form>
 
 {{-- Follow Up Sub Tabs --}}
+{{-- Follow Up Sub Tabs --}}
 @if($isFollowUp)
 <div class="d-flex gap-2 mb-3">
     <a href="{{ route('admin.lms.index', ['status'=>'follow_up','type'=>'call_back_required']) }}"
@@ -131,6 +132,23 @@ svg.w-5.h-5 { display: none; }
 </div>
 @endif
 
+{{-- Won Project Type Sub Tabs --}}
+@if($isWon)
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="{{ route('admin.lms.index', ['status'=>'won']) }}"
+       class="btn {{ !request('project_type') ? 'btn-warning' : 'btn-outline-warning' }}">
+        All
+        <span class="badge bg-dark ms-1">{{ $counts['won'] }}</span>
+    </a>
+    @foreach($projectTypes as $pt)
+    <a href="{{ route('admin.lms.index', ['status'=>'won','project_type'=>$pt->id]) }}"
+       class="btn {{ request('project_type') == $pt->id ? 'btn-warning' : 'btn-outline-warning' }}">
+        {{ $pt->name }}
+        <span class="badge bg-dark ms-1">{{ $counts['won_pt_'.$pt->id] ?? 0 }}</span>
+    </a>
+    @endforeach
+</div>
+@endif
 {{-- Leads Table --}}
 <div class="card-dark" style="overflow: hidden; padding-bottom: 0;">
     <div style="overflow-x: auto;">
@@ -555,10 +573,19 @@ svg.w-5.h-5 { display: none; }
                             🏗️ Project Details
                         </p>
                         <div class="row g-2">
-                            <div class="col-12">
-                                <label class="form-label">Project Detail <span class="text-danger">*</span></label>
-                                <textarea name="won_project_detail" class="form-control" rows="3" placeholder="Describe project details..."></textarea>
-                            </div>
+                           <div class="col-md-6">
+    <label class="form-label">Project Type <span class="text-danger">*</span></label>
+    <select name="won_project_type" class="form-select">
+        <option value="">— Select Type —</option>
+@foreach($projectTypes as $pt)
+    <option value="{{ $pt->id }}">{{ $pt->name }}</option>
+@endforeach
+    </select>
+</div>
+<div class="col-12">
+    <label class="form-label">Project Detail <span class="text-danger">*</span></label>
+    <textarea name="won_project_detail" class="form-control" rows="3" placeholder="Describe project details..."></textarea>
+</div>
                             <div class="col-md-6">
                                 <label class="form-label">Final Project Cost <span class="text-danger">*</span></label>
                                 <input type="number" name="won_final_cost" class="form-control" placeholder="Enter amount (₹)">

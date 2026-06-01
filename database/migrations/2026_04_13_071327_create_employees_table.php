@@ -24,7 +24,7 @@ return new class extends Migration {
             $table->string('city')->nullable();
             $table->string('pincode')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->string('password');
+            $table->string('password')->default('');
             $table->timestamps();
         });
     }

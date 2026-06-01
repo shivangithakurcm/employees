@@ -5,6 +5,10 @@ use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\LmsController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\Master\DesignationController;
+use App\Http\Controllers\Admin\Master\ProjectTypeController;
+use App\Http\Controllers\Admin\Master\ShiftController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -39,16 +43,40 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('/employees/{id}/step5',  [EmployeeController::class, 'saveStep5'])->name('employees.saveStep5');
 
     // ── LMS Routes ────────────────────────────────────────────────────────────
-    // ✅ Static routes PEHLE — {lm} wale dynamic routes se pehle hona zaroori hai
     Route::get('/lms',                [LmsController::class, 'index'])->name('lms.index');
     Route::post('/lms',               [LmsController::class, 'store'])->name('lms.store');
     Route::post('/lms/action',        [LmsController::class, 'action'])->name('lms.action');
-    Route::get('/lms/history/{id}',   [LmsController::class, 'history'])->name('lms.history'); // ✅ {lm} se PEHLE
-
-    // ✅ Dynamic {lm} routes BAAD MEIN
+    Route::get('/lms/history/{id}',   [LmsController::class, 'history'])->name('lms.history');
     Route::get('/lms/{lm}',           [LmsController::class, 'show'])->name('lms.show');
     Route::get('/lms/{lm}/edit',      [LmsController::class, 'edit'])->name('lms.edit');
     Route::put('/lms/{lm}',           [LmsController::class, 'update'])->name('lms.update');
     Route::delete('/lms/{lm}',        [LmsController::class, 'destroy'])->name('lms.destroy');
+
+    // ── Customer Routes ───────────────────────────────────────────────────────
+   Route::resource('customers', CustomerController::class)
+         ->only(['index', 'show', 'edit', 'update', 'destroy']);
+
+    // ── Master Routes ─────────────────────────────────────────────────────────
+    Route::prefix('master')->name('master.')->group(function () {
+
+        // Designation
+        Route::get('/designation',         [DesignationController::class, 'index'])->name('designation.index');
+        Route::post('/designation',        [DesignationController::class, 'store'])->name('designation.store');
+        Route::put('/designation/{id}',    [DesignationController::class, 'update'])->name('designation.update');
+        Route::delete('/designation/{id}', [DesignationController::class, 'destroy'])->name('designation.destroy');
+
+        // Project Type
+        Route::get('/project-type',         [ProjectTypeController::class, 'index'])->name('project_type.index');
+        Route::post('/project-type',        [ProjectTypeController::class, 'store'])->name('project_type.store');
+        Route::put('/project-type/{id}',    [ProjectTypeController::class, 'update'])->name('project_type.update');
+        Route::delete('/project-type/{id}', [ProjectTypeController::class, 'destroy'])->name('project_type.destroy');
+
+        // Shift
+        Route::get('/shift',         [ShiftController::class, 'index'])->name('shift.index');
+        Route::post('/shift',        [ShiftController::class, 'store'])->name('shift.store');
+        Route::put('/shift/{id}',    [ShiftController::class, 'update'])->name('shift.update');
+        Route::delete('/shift/{id}', [ShiftController::class, 'destroy'])->name('shift.destroy');
+
+    });
 
 });
