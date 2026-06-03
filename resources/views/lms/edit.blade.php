@@ -64,17 +64,13 @@
                 <label class="form-label">Status *</label>
                 <select name="status" class="form-select" id="editStatus" required>
                     <option value="">— Select —</option>
-                    @foreach([
-                        'call_back_required' => 'Call Back Required',
-                        'not_responded'      => 'Not Responded',
-                        'call_schedule'      => 'Call Schedule',
-                        'not_interested'     => 'Not Interested',
-                        'not_in_scope'       => 'Not In Scope',
-                        'qualified'          => 'Qualified',
-                        'proposal_sent'      => 'Proposal Sent',
-                        'won'                => 'Won',
-                        'lost'               => 'Lost',
-                    ] as $val => $label)
+                   @foreach([
+    'call_back_required' => 'Call Back Required',
+    'not_responded'      => 'Not Responded',
+    'call_schedule'      => 'Call Schedule',
+    'not_interested'     => 'Not Interested',
+    'not_in_scope'       => 'Not In Scope',
+] as $val => $label)
                         <option value="{{ $val }}" {{ $lm->status == $val ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
