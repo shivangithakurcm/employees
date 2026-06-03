@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmployeeApiController;
 use App\Http\Controllers\Api\LeadApiController;
+use App\Http\Controllers\Api\CustomerApiController;
+use App\Http\Controllers\Admin\Master\DesignationController;
+use App\Http\Controllers\Admin\Master\ProjectTypeController;
+use App\Http\Controllers\Admin\Master\ShiftController;
 
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -31,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leads',                        [LeadApiController::class, 'store']);
     Route::get('/leads/counts',                  [LeadApiController::class, 'getCounts']);
     Route::get('/leads/search',                  [LeadApiController::class, 'search']);
-    Route::get('/leads/all-history',             [LeadApiController::class, 'allHistory']); // ✅ {id} se pehle
+    Route::get('/leads/all-history',             [LeadApiController::class, 'allHistory']);
     Route::post('/leads/update-multiple',        [LeadApiController::class, 'updateMultiple']);
     Route::delete('/leads/destroy-multiple',     [LeadApiController::class, 'destroyMultiple']);
     Route::get('/follow-ups',                    [LeadApiController::class, 'getAllFollowUps']);
@@ -50,5 +54,37 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leads/{id}/won',               [LeadApiController::class, 'won']);
     Route::post('/leads/{id}/lost',              [LeadApiController::class, 'lost']);
     Route::post('/leads/{id}/draft',             [LeadApiController::class, 'draft']);
-    Route::get('/leads/{id}/history',            [LeadApiController::class, 'history']); // ✅ particular lead history
+    Route::get('/leads/{id}/history',            [LeadApiController::class, 'history']);
+
+    // Customer routes
+    Route::prefix('customers')->group(function () {
+        Route::get('/',        [CustomerApiController::class, 'index']);
+        Route::post('/',       [CustomerApiController::class, 'store']);
+        Route::get('/{id}',    [CustomerApiController::class, 'show']);
+        Route::put('/{id}',    [CustomerApiController::class, 'update']);
+        Route::delete('/{id}', [CustomerApiController::class, 'destroy']);
+    });
+
+    // Master routes
+    Route::prefix('master')->group(function () {
+
+        // Designation
+        Route::get('/designations',         [DesignationController::class, 'index']);
+        Route::post('/designations',        [DesignationController::class, 'store']);
+        Route::put('/designations/{id}',    [DesignationController::class, 'update']);
+        Route::delete('/designations/{id}', [DesignationController::class, 'destroy']);
+
+        // Project Type
+        Route::get('/project-types',         [ProjectTypeController::class, 'index']);
+        Route::post('/project-types',        [ProjectTypeController::class, 'store']);
+        Route::put('/project-types/{id}',    [ProjectTypeController::class, 'update']);
+        Route::delete('/project-types/{id}', [ProjectTypeController::class, 'destroy']);
+
+        // Shift
+        Route::get('/shifts',         [ShiftController::class, 'index']);
+        Route::post('/shifts',        [ShiftController::class, 'store']);
+        Route::put('/shifts/{id}',    [ShiftController::class, 'update']);
+        Route::delete('/shifts/{id}', [ShiftController::class, 'destroy']);
+    });
+
 });

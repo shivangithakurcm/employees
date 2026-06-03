@@ -25,16 +25,33 @@
             </div>
             <div class="col-md-6">
                 <label class="form-label">Designation</label>
-               <select name="designation" class="form-select">
-    <option value="">Select Designation</option>
-    @foreach($designations as $d)
-        <option value="{{ $d->name }}" 
-            {{ old('designation', $employee->officialDetail->designation ?? '') == $d->name ? 'selected' : '' }}>
-            {{ $d->name }}
-        </option>
-    @endforeach
-</select>
+                <select name="designation" class="form-select">
+                    <option value="">Select Designation</option>
+                    @foreach($designations as $d)
+                        <option value="{{ $d->name }}"
+                            {{ old('designation', $employee->officialDetail->designation ?? '') == $d->name ? 'selected' : '' }}>
+                            {{ $d->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
+
+            {{-- Shift Details Section --}}
+            <div class="col-md-12">
+                <label class="form-label">Shift</label>
+                <select name="shift_id" class="form-select">
+                    <option value="">Select Shift</option>
+                    @foreach($shifts as $shift)
+                        <option value="{{ $shift->id }}"
+                            {{ old('shift_id', $employee->officialDetail->shift_id ?? '') == $shift->id ? 'selected' : '' }}>
+                            {{ $shift->shift_name }}
+                            ({{ \Carbon\Carbon::parse($shift->shift_from)->format('h:i A') }} -
+                             {{ \Carbon\Carbon::parse($shift->shift_to)->format('h:i A') }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="col-md-6">
                 <label class="form-label">Salary</label>
                 <input type="number" name="salary"

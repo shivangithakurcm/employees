@@ -12,6 +12,9 @@ return new class extends Migration {
             $table->foreignId('employee_id')->constrained()->onDelete('cascade');
             $table->date('doj')->nullable();
             $table->string('designation')->nullable();
+            $table->string('shift_name')->nullable();
+$table->time('shift_from')->nullable();
+$table->time('shift_to')->nullable();
             $table->decimal('salary', 10, 2)->nullable();
             $table->string('branch')->nullable();
             $table->string('permission')->nullable();

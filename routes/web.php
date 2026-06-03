@@ -53,8 +53,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::delete('/lms/{lm}',        [LmsController::class, 'destroy'])->name('lms.destroy');
 
     // ── Customer Routes ───────────────────────────────────────────────────────
-   Route::resource('customers', CustomerController::class)
-         ->only(['index', 'show', 'edit', 'update', 'destroy']);
+    Route::resource('customers', CustomerController::class)
+          ->only(['index', 'show', 'edit', 'update', 'destroy']);
 
     // ── Master Routes ─────────────────────────────────────────────────────────
     Route::prefix('master')->name('master.')->group(function () {
@@ -72,10 +72,12 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::delete('/project-type/{id}', [ProjectTypeController::class, 'destroy'])->name('project_type.destroy');
 
         // Shift
-        Route::get('/shift',         [ShiftController::class, 'index'])->name('shift.index');
-        Route::post('/shift',        [ShiftController::class, 'store'])->name('shift.store');
-        Route::put('/shift/{id}',    [ShiftController::class, 'update'])->name('shift.update');
-        Route::delete('/shift/{id}', [ShiftController::class, 'destroy'])->name('shift.destroy');
+        Route::get('/shift',                [ShiftController::class, 'index'])->name('shift.index');
+        Route::get('/shift/create',         [ShiftController::class, 'create'])->name('shift.create');
+        Route::post('/shift',               [ShiftController::class, 'store'])->name('shift.store');
+        Route::get('/shift/{id}/edit',      [ShiftController::class, 'edit'])->name('shift.edit');
+        Route::put('/shift/{id}',           [ShiftController::class, 'update'])->name('shift.update');
+        Route::delete('/shift/{id}',        [ShiftController::class, 'destroy'])->name('shift.destroy');
 
     });
 

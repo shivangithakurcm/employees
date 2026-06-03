@@ -5,78 +5,78 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\EmployeeOfficialDetail;
+use App\Models\Shift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends Controller
 {
-    // Employee List
+    // ─── Employee List ────────────────────────────────────────────────────────
     public function index(Request $request)
-{
-    $query = Employee::query();
+    {
+        $query = Employee::query();
 
-    // ✅ Search fix - closure mein wrap karo
-    if ($request->filled('search')) {
-        $query->where(function($q) use ($request) {
-            $q->where('name', 'like', '%' . $request->search . '%')
-              ->orWhere('email', 'like', '%' . $request->search . '%')
-              ->orWhere('contact', 'like', '%' . $request->search . '%');
-        });
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name',    'like', '%' . $request->search . '%')
+                  ->orWhere('email',   'like', '%' . $request->search . '%')
+                  ->orWhere('contact', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        $employees = $query->latest()->paginate(10);
+
+        return view('admin.employees.index', compact('employees'));
     }
 
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
+    // ─── Step 1 – Basic Info ──────────────────────────────────────────────────
+    public function create()
+    {
+        $designations = \App\Models\Designation::orderBy('name')->get();
+        return view('admin.employees.create', compact('designations'));
     }
 
-    if ($request->filled('date')) {
-        $query->whereDate('created_at', $request->date);
+    public function storeBasicInfo(Request $request)
+    {
+        $request->validate([
+            'name'    => 'required',
+            'email'   => 'required|email',
+            'contact' => 'required',
+        ]);
+
+        $employee = new Employee();
+        $employee->name           = $request->name;
+        $employee->email          = $request->email;
+        $employee->contact        = $request->contact;
+        $employee->address        = $request->address;
+        $employee->state          = $request->state;
+        $employee->city           = $request->city;
+        $employee->pincode        = $request->pincode;
+        $employee->date_of_birth  = $request->date_of_birth;
+        $employee->marital_status = $request->marital_status;
+        $employee->blood_group    = $request->blood_group;
+        $employee->designation    = $request->designation;
+        $employee->password       = '';
+        $employee->save();
+
+        if ($request->hasFile('photo')) {
+            $employee->photo = $request->file('photo')->store('employees', 'public');
+            $employee->save();
+        }
+
+        return redirect()->route('admin.employees.step2', $employee->id)
+                         ->with('success', 'Basic info saved!');
     }
 
-    $employees = $query->latest()->paginate(10);
-
-    return view('admin.employees.index', compact('employees'));
-}
-
-    // Step 1 - Basic Info
-   public function create()
-{
-    $designations = \App\Models\Designation::orderBy('name')->get();
-    return view('admin.employees.create', compact('designations'));
-}
-
-   public function storeBasicInfo(Request $request)
-{
-    $request->validate([
-        'name' => 'required',
-        'email' => 'required|email',
-        'contact' => 'required',
-    ]);
-
-    $employee = new Employee();
-
-    $employee->name = $request->name;
-    $employee->email = $request->email;
-    $employee->contact = $request->contact;
-
-    $employee->address = $request->address;
-    $employee->state = $request->state;
-    $employee->city = $request->city;
-    $employee->pincode = $request->pincode;
-    $employee->date_of_birth = $request->date_of_birth;
-    $employee->marital_status = $request->marital_status;
-    $employee->blood_group = $request->blood_group;
-   $employee->designation = $request->designation;
-    $employee->password = '';
-    // SAVE EMPLOYEE FIRST (IMPORTANT)
-    $employee->save();
-
-    // OPTIONAL: photo upload logic here
-
-    return redirect()->route('admin.employees.step2', $employee->id)
-        ->with('success', 'Employee added successfully');
-}
-
-    // Step 2 - Educational Qualification
+    // ─── Step 2 – Educational Qualifications ─────────────────────────────────
     public function step2($id)
     {
         $employee = Employee::with('qualifications')->findOrFail($id);
@@ -90,13 +90,14 @@ class EmployeeController extends Controller
 
         if ($request->has('qualifications')) {
             foreach ($request->qualifications as $qual) {
+                if (empty($qual['qualification_type']) && empty($qual['institution_name'])) continue;
                 $employee->qualifications()->create([
                     'qualification_type' => $qual['qualification_type'] ?? null,
-                    'institution_name'   => $qual['institution_name'] ?? '',
-                    'field_of_study'     => $qual['field_of_study'] ?? null,
-                    'start_date'         => $qual['start_date'] ?? null,
-                    'end_date'           => $qual['end_date'] ?? null,
-                    'percentage'         => $qual['percentage'] ?? null,
+                    'institution_name'   => $qual['institution_name']   ?? '',
+                    'field_of_study'     => $qual['field_of_study']     ?? null,
+                    'start_date'         => $qual['start_date']         ?? null,
+                    'end_date'           => $qual['end_date']           ?? null,
+                    'percentage'         => $qual['percentage']         ?? null,
                 ]);
             }
         }
@@ -105,7 +106,7 @@ class EmployeeController extends Controller
                          ->with('success', 'Qualifications saved!');
     }
 
-    // Step 3 - Previous Employer
+    // ─── Step 3 – Previous Employers ─────────────────────────────────────────
     public function step3($id)
     {
         $employee = Employee::with('previousEmployers')->findOrFail($id);
@@ -119,17 +120,18 @@ class EmployeeController extends Controller
 
         if ($request->has('employers')) {
             foreach ($request->employers as $employer) {
+                if (empty($employer['company_name'])) continue;
                 $employee->previousEmployers()->create([
-                    'company_name'   => $employer['company_name'] ?? '',
-                    'hr_name'        => $employer['hr_name'] ?? null,
-                    'hr_phone'       => $employer['hr_phone'] ?? null,
-                    'address_line1'  => $employer['address_line1'] ?? null,
-                    'state'          => $employer['state'] ?? null,
-                    'city'           => $employer['city'] ?? null,
-                    'pincode'        => $employer['pincode'] ?? null,
+                    'company_name'   => $employer['company_name']   ?? '',
+                    'hr_name'        => $employer['hr_name']        ?? null,
+                    'hr_phone'       => $employer['hr_phone']       ?? null,
+                    'address_line1'  => $employer['address_line1']  ?? null,
+                    'state'          => $employer['state']          ?? null,
+                    'city'           => $employer['city']           ?? null,
+                    'pincode'        => $employer['pincode']        ?? null,
                     'monthly_salary' => $employer['monthly_salary'] ?? null,
-                    'designation'    => $employer['designation'] ?? null,
-                    'duration'       => $employer['duration'] ?? null,
+                    'designation'    => $employer['designation']    ?? null,
+                    'duration'       => $employer['duration']       ?? null,
                 ]);
             }
         }
@@ -138,75 +140,90 @@ class EmployeeController extends Controller
                          ->with('success', 'Previous employers saved!');
     }
 
+    // ─── Step 4 – Bank Details ────────────────────────────────────────────────
     public function step4($id)
-{
-    $employee = Employee::with('bankDetails')->findOrFail($id);
-    return view('admin.employees.step4', compact('employee'));
-}
+    {
+        $employee = Employee::with('bankDetails')->findOrFail($id);
+        return view('admin.employees.step4', compact('employee'));
+    }
 
-    // Step 4 - Bank Details
     public function saveStep4(Request $request, $id)
-{
-    $employee = Employee::findOrFail($id);
-    $employee->bankDetails()->delete();
+    {
+        $employee = Employee::findOrFail($id);
+        $employee->bankDetails()->delete();
 
-    if ($request->has('bank_details')) {
-        foreach ($request->bank_details as $index => $detail) {
-            $photoPath    = null;
-            $passbookPath = null;
+        if ($request->has('bank_details')) {
+            foreach ($request->bank_details as $index => $detail) {
+                $photoPath    = null;
+                $passbookPath = null;
 
-            if ($request->hasFile("bank_details.$index.photo")) {
-                $photoPath = $request->file("bank_details.$index.photo")
-                                     ->store('employees/bank', 'public');
+                if ($request->hasFile("bank_details.$index.photo")) {
+                    $photoPath = $request->file("bank_details.$index.photo")
+                                         ->store('employees/bank', 'public');
+                }
+                if ($request->hasFile("bank_details.$index.passbook")) {
+                    $passbookPath = $request->file("bank_details.$index.passbook")
+                                            ->store('employees/passbook', 'public');
+                }
+
+                $employee->bankDetails()->create([
+                    'holder_name'    => $detail['holder_name']    ?? '',
+                    'bank_name'      => $detail['bank_name']      ?? '',
+                    'account_number' => $detail['account_number'] ?? '',
+                    'ifsc_code'      => $detail['ifsc_code']      ?? '',
+                    'photo'          => $photoPath,
+                    'passbook'       => $passbookPath,
+                ]);
             }
-            if ($request->hasFile("bank_details.$index.passbook")) {
-                $passbookPath = $request->file("bank_details.$index.passbook")
-                                        ->store('employees/passbook', 'public');
-            }
-
-            $employee->bankDetails()->create([
-                'holder_name'    => $detail['holder_name'] ?? '',
-                'bank_name'      => $detail['bank_name'] ?? '',
-                'account_number' => $detail['account_number'] ?? '',
-                'ifsc_code'      => $detail['ifsc_code'] ?? '',
-                'photo'          => $photoPath,
-                'passbook'       => $passbookPath,
-            ]);
         }
+
+        return redirect()->route('admin.employees.step5', $id)
+                         ->with('success', 'Bank details saved!');
     }
 
-    return redirect()->route('admin.employees.step5', $id)
-                     ->with('success', 'Bank details saved!');
-
-                     
-}
-
-    // Step 5 - Official Details
-  public function saveStep5(Request $request, $id)
-{
-    $employee = Employee::findOrFail($id);
-
-    // Designation Master mein save karo agar nahi hai
-    if ($request->filled('designation')) {
-        \App\Models\Designation::firstOrCreate(['name' => $request->designation]);
+    // ─── Step 5 – Official Details ────────────────────────────────────────────
+    public function step5($id)
+    {
+        $employee     = Employee::findOrFail($id);
+        $shifts       = Shift::all();
+        $designations = \App\Models\Designation::orderBy('name')->get();
+        return view('admin.employees.step5', compact('employee', 'shifts', 'designations'));
     }
 
-    EmployeeOfficialDetail::updateOrCreate(
-        ['employee_id' => $employee->id],
-        [
+    public function saveStep5(Request $request, $id)
+    {
+        $employee = Employee::findOrFail($id);
+
+        $officialData = [
             'doj'         => $request->doj,
             'designation' => $request->designation,
+            'shift_id'    => $request->shift_id,
             'salary'      => $request->salary,
             'branch'      => $request->branch,
             'permission'  => $request->permission,
-            'password'    => bcrypt($request->password),
-        ]
-    );
+        ];
 
-    return redirect()->route('admin.employees.index')
-                     ->with('success', 'Employee added successfully!');
-}
-    // View Employee
+        if ($request->filled('password')) {
+            $officialData['password'] = bcrypt($request->password);
+        } else {
+            $existing = $employee->officialDetail;
+            $officialData['password'] = $existing ? $existing->password : null;
+        }
+
+        $employee->officialDetail()->updateOrCreate(
+            ['employee_id' => $employee->id],
+            $officialData
+        );
+
+        // sync designation to employees table
+        $employee->designation = $request->designation;
+        $employee->save();
+
+        return redirect()->route('admin.employees.index')
+                         ->with('success', 'Employee added successfully.');
+    }
+
+    // ─── Show Employee ────────────────────────────────────────────────────────
     public function show($id)
     {
         $employee = Employee::with([
@@ -219,161 +236,132 @@ class EmployeeController extends Controller
         return view('admin.employees.show', compact('employee'));
     }
 
-    // Edit Employee
-   // Edit Employee
-public function edit($id)
-{
-    $employee = Employee::with([   
-        'qualifications',
-        'previousEmployers',
-        'bankDetails',
-        'officialDetail'
-    ])->findOrFail($id);
+    // ─── Edit Employee ────────────────────────────────────────────────────────
+    public function edit($id)
+    {
+        $employee = Employee::with([
+            'qualifications',
+            'previousEmployers',
+            'bankDetails',
+            'officialDetail'
+        ])->findOrFail($id);
 
-    $designations = \App\Models\Designation::orderBy('name')->get();
-    return view('admin.employees.edit', compact('employee', 'designations'));
-}
+        $designations = \App\Models\Designation::orderBy('name')->get();
+        $shifts       = Shift::all();
+
+        return view('admin.employees.edit', compact('employee', 'designations', 'shifts'));
+    }
+
+    // ─── Update Employee ──────────────────────────────────────────────────────
     public function update(Request $request, $id)
-{
-    $employee = Employee::findOrFail($id);
-
-    /* ---------------- BASIC INFO ---------------- */
-  $employee->update($request->only([
-    'name','email','contact','address',
-    'state','city','pincode',
-    'date_of_birth','marital_status','blood_group','status'
-]));
-
-// Designation update
-// Designation update - dono jagah save karo
-if ($request->filled('designation')) {
-    $employee->designation = $request->designation;
-    $employee->save();
-
-    \App\Models\EmployeeOfficialDetail::updateOrCreate(
-        ['employee_id' => $employee->id],
-        ['designation' => $request->designation]
-    );
-}
-    /* ---------------- PHOTO ---------------- */
-    if ($request->hasFile('photo')) {
-        $file = $request->file('photo')->store('employees', 'public');
-        $employee->photo = $file;
-        $employee->save();
-    }
-
-    /* ---------------- QUALIFICATIONS ---------------- */
-    $employee->qualifications()->delete();
-
-    if ($request->filled('qualifications')) {
-        foreach ($request->qualifications as $q) {
-
-            // SKIP EMPTY ROWS
-            if (
-                empty($q['qualification_type']) &&
-                empty($q['institution_name']) &&
-                empty($q['field_of_study'])
-            ) {
-                continue;
-            }
-
-            $employee->qualifications()->create([
-                'qualification_type' => $q['qualification_type'] ?? null,
-                'institution_name'   => $q['institution_name'] ?? null,
-                'field_of_study'     => $q['field_of_study'] ?? null,
-                'start_date'         => $q['start_date'] ?? null,
-                'end_date'           => $q['end_date'] ?? null,
-            ]);
-        }
-    }
-
-    /* ---------------- EMPLOYERS ---------------- */
-    $employee->previousEmployers()->delete();
-
-    if ($request->filled('employers')) {
-        foreach ($request->employers as $e) {
-
-            if (empty($e['company_name'])) continue;
-
-            // FILE HANDLING
-            if (isset($e['salary_slip']) && $e['salary_slip'] instanceof \Illuminate\Http\UploadedFile) {
-                $e['salary_slip'] = $e['salary_slip']->store('salary_slips', 'public');
-            }
-
-            $employee->previousEmployers()->create($e);
-        }
-    }
-
-    /* ---------------- BANK DETAILS ---------------- */
-    $employee->bankDetails()->delete();
-
-    if ($request->filled('bank_details')) {
-        foreach ($request->bank_details as $b) {
-
-            if (empty($b['holder_name']) && empty($b['bank_name'])) {
-                continue;
-            }
-
-            // PHOTO
-            if (isset($b['photo']) && $b['photo'] instanceof \Illuminate\Http\UploadedFile) {
-                $b['photo'] = $b['photo']->store('bank_photos', 'public');
-            }
-
-            // PASSBOOK
-            if (isset($b['passbook']) && $b['passbook'] instanceof \Illuminate\Http\UploadedFile) {
-                $b['passbook'] = $b['passbook']->store('passbooks', 'public');
-            }
-
-            $employee->bankDetails()->create($b);
-        }
-    }
-
-    return redirect()
-        ->route('admin.employees.show', $id)
-        ->with('success', 'Employee updated successfully');
-}
-
-
-
-    // Toggle Status status 
-    public function toggleStatus($id)
     {
         $employee = Employee::findOrFail($id);
+
+        /* ── BASIC INFO ── */
+        $employee->update($request->only([
+            'name', 'email', 'contact', 'address',
+            'state', 'city', 'pincode',
+            'date_of_birth', 'marital_status', 'blood_group', 'status',
+        ]));
+
+        /* ── PHOTO ── */
+        if ($request->hasFile('photo')) {
+            $employee->photo = $request->file('photo')->store('employees', 'public');
+            $employee->save();
+        }
+
+        /* ── QUALIFICATIONS ── */
+        $employee->qualifications()->delete();
+        if ($request->filled('qualifications')) {
+            foreach ($request->qualifications as $q) {
+                if (empty($q['qualification_type']) && empty($q['institution_name'])) continue;
+                $employee->qualifications()->create([
+                    'qualification_type' => $q['qualification_type'] ?? null,
+                    'institution_name'   => $q['institution_name']   ?? null,
+                    'field_of_study'     => $q['field_of_study']     ?? null,
+                    'start_date'         => $q['start_date']         ?? null,
+                    'end_date'           => $q['end_date']           ?? null,
+                    'percentage'         => $q['percentage']         ?? null,
+                ]);
+            }
+        }
+
+        /* ── PREVIOUS EMPLOYERS ── */
+        $employee->previousEmployers()->delete();
+        if ($request->filled('employers')) {
+            foreach ($request->employers as $e) {
+                if (empty($e['company_name'])) continue;
+                $employee->previousEmployers()->create([
+                    'company_name'   => $e['company_name']   ?? '',
+                    'hr_name'        => $e['hr_name']        ?? null,
+                    'hr_phone'       => $e['hr_phone']       ?? null,
+                    'address_line1'  => $e['address_line1']  ?? null,
+                    'state'          => $e['state']          ?? null,
+                    'city'           => $e['city']           ?? null,
+                    'pincode'        => $e['pincode']        ?? null,
+                    'monthly_salary' => $e['monthly_salary'] ?? null,
+                    'designation'    => $e['designation']    ?? null,
+                    'duration'       => $e['duration']       ?? null,
+                ]);
+            }
+        }
+
+        /* ── BANK DETAILS ── */
+        $employee->bankDetails()->delete();
+        if ($request->filled('bank_details')) {
+            foreach ($request->bank_details as $index => $b) {
+                if (empty($b['holder_name']) && empty($b['bank_name'])) continue;
+                $photoPath = $passbookPath = null;
+                if ($request->hasFile("bank_details.$index.photo")) {
+                    $photoPath = $request->file("bank_details.$index.photo")
+                                         ->store('bank_photos', 'public');
+                }
+                if ($request->hasFile("bank_details.$index.passbook")) {
+                    $passbookPath = $request->file("bank_details.$index.passbook")
+                                            ->store('passbooks', 'public');
+                }
+                $employee->bankDetails()->create([
+                    'holder_name'    => $b['holder_name']    ?? '',
+                    'bank_name'      => $b['bank_name']      ?? '',
+                    'account_number' => $b['account_number'] ?? '',
+                    'ifsc_code'      => $b['ifsc_code']      ?? '',
+                    'photo'          => $photoPath,
+                    'passbook'       => $passbookPath,
+                ]);
+            }
+        }
+
+        /* ── OFFICIAL DETAILS ── */
+        $officialData = [
+            'designation' => $request->designation,
+            'doj'         => $request->doj,
+            'shift_id'    => $request->shift_id,
+            'salary'      => $request->salary,
+            'branch'      => $request->branch,
+            'permission'  => $request->permission,
+        ];
+        if ($request->filled('password')) {
+            $officialData['password'] = bcrypt($request->password);
+        }
+        $employee->officialDetail()->updateOrCreate(
+            ['employee_id' => $employee->id],
+            $officialData
+        );
+
+        // sync designation to employees table
+        $employee->designation = $request->designation;
+        $employee->save();
+
+        return redirect()->route('admin.employees.show', $id)
+                         ->with('success', 'Employee updated successfully');
+    }
+
+    // ─── Toggle Status ────────────────────────────────────────────────────────
+    public function toggleStatus($id)
+    {
+        $employee         = Employee::findOrFail($id);
         $employee->status = ($employee->status === 'active') ? 'inactive' : 'active';
         $employee->save();
         return back()->with('success', 'Status updated!');
     }
-
-
-    public function lmsAction(Request $request)
-{
-    $lead = Lead::find($request->lead_id);
-
-    if (!$lead) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Lead not found'
-        ]);
-    }
-
-    // status update
-    $lead->status = $request->action_type;
-
-    // date time logic
-    if (in_array($request->action_type, ['call_schedule', 'call_back_required', 'reschedule'])) {
-        $lead->date = $request->date;
-        $lead->time = $request->time;
-    } else {
-        $lead->date = null;
-        $lead->time = null;
-    }
-
-    $lead->comment = $request->comment;
-    $lead->save();
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Action updated successfully'
-    ]);
-}
 }
