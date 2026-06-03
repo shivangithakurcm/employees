@@ -32,7 +32,7 @@ class EmployeeController extends Controller
             $query->whereDate('created_at', $request->date);
         }
 
-        $employees = $query->latest()->paginate(10);
+        $employees = $query->latest()->paginate(5);
 
         return view('admin.employees.index', compact('employees'));
     }
@@ -47,9 +47,18 @@ class EmployeeController extends Controller
     public function storeBasicInfo(Request $request)
     {
         $request->validate([
-            'name'    => 'required',
-            'email'   => 'required|email',
-            'contact' => 'required',
+            'name'    => 'required|string|max:100',
+            'email'   => 'required|email|unique:employees,email',
+            'contact' => 'required|numeric|digits:10',
+        ], [
+            'name.required'    => 'Name is required.',
+            'name.max'         => 'Name cannot exceed 100 characters.',
+            'email.required'   => 'Email is required.',
+            'email.email'      => 'Please enter a valid email.',
+            'email.unique'     => 'This email is already registered.',
+            'contact.required' => 'Contact number is required.',
+            'contact.numeric'  => 'Contact must contain numbers only.',
+            'contact.digits'   => 'Contact must be exactly 10 digits.',
         ]);
 
         $employee = new Employee();
@@ -86,9 +95,21 @@ class EmployeeController extends Controller
     public function saveStep2(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
-        $employee->qualifications()->delete();
 
+        // Check karo koi bhi qualification filled hai ya nahi
+        $hasData = false;
         if ($request->has('qualifications')) {
+            foreach ($request->qualifications as $qual) {
+                if (!empty($qual['qualification_type']) || !empty($qual['institution_name'])) {
+                    $hasData = true;
+                    break;
+                }
+            }
+        }
+
+        // Data hai tabhi save karo, warna skip karke aage
+        if ($hasData) {
+            $employee->qualifications()->delete();
             foreach ($request->qualifications as $qual) {
                 if (empty($qual['qualification_type']) && empty($qual['institution_name'])) continue;
                 $employee->qualifications()->create([
@@ -100,10 +121,12 @@ class EmployeeController extends Controller
                     'percentage'         => $qual['percentage']         ?? null,
                 ]);
             }
+            return redirect()->route('admin.employees.step3', $id)
+                             ->with('success', 'Qualifications saved!');
         }
 
-        return redirect()->route('admin.employees.step3', $id)
-                         ->with('success', 'Qualifications saved!');
+        // Skip — bina message ke aage
+        return redirect()->route('admin.employees.step3', $id);
     }
 
     // ─── Step 3 – Previous Employers ─────────────────────────────────────────
@@ -116,9 +139,21 @@ class EmployeeController extends Controller
     public function saveStep3(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
-        $employee->previousEmployers()->delete();
 
+        // Check karo koi bhi employer filled hai ya nahi
+        $hasData = false;
         if ($request->has('employers')) {
+            foreach ($request->employers as $employer) {
+                if (!empty($employer['company_name'])) {
+                    $hasData = true;
+                    break;
+                }
+            }
+        }
+
+        // Data hai tabhi save karo, warna skip karke aage
+        if ($hasData) {
+            $employee->previousEmployers()->delete();
             foreach ($request->employers as $employer) {
                 if (empty($employer['company_name'])) continue;
                 $employee->previousEmployers()->create([
@@ -134,10 +169,12 @@ class EmployeeController extends Controller
                     'duration'       => $employer['duration']       ?? null,
                 ]);
             }
+            return redirect()->route('admin.employees.step4', $id)
+                             ->with('success', 'Previous employers saved!');
         }
 
-        return redirect()->route('admin.employees.step4', $id)
-                         ->with('success', 'Previous employers saved!');
+        // Skip — bina message ke aage
+        return redirect()->route('admin.employees.step4', $id);
     }
 
     // ─── Step 4 – Bank Details ────────────────────────────────────────────────
@@ -150,9 +187,21 @@ class EmployeeController extends Controller
     public function saveStep4(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
-        $employee->bankDetails()->delete();
 
+        // Check karo koi bhi bank detail filled hai ya nahi
+        $hasData = false;
         if ($request->has('bank_details')) {
+            foreach ($request->bank_details as $detail) {
+                if (!empty($detail['holder_name']) || !empty($detail['bank_name'])) {
+                    $hasData = true;
+                    break;
+                }
+            }
+        }
+
+        // Data hai tabhi save karo, warna skip karke aage
+        if ($hasData) {
+            $employee->bankDetails()->delete();
             foreach ($request->bank_details as $index => $detail) {
                 $photoPath    = null;
                 $passbookPath = null;
@@ -175,10 +224,12 @@ class EmployeeController extends Controller
                     'passbook'       => $passbookPath,
                 ]);
             }
+            return redirect()->route('admin.employees.step5', $id)
+                             ->with('success', 'Bank details saved!');
         }
 
-        return redirect()->route('admin.employees.step5', $id)
-                         ->with('success', 'Bank details saved!');
+        // Skip — bina message ke aage
+        return redirect()->route('admin.employees.step5', $id);
     }
 
     // ─── Step 5 – Official Details ────────────────────────────────────────────
@@ -215,7 +266,6 @@ class EmployeeController extends Controller
             $officialData
         );
 
-        // sync designation to employees table
         $employee->designation = $request->designation;
         $employee->save();
 
@@ -256,6 +306,21 @@ class EmployeeController extends Controller
     public function update(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
+
+        $request->validate([
+            'name'    => 'required|string|max:100',
+            'email'   => 'required|email|unique:employees,email,' . $id,
+            'contact' => 'required|numeric|digits:10',
+        ], [
+            'name.required'    => 'Name zaroori hai.',
+            'name.max'         => 'Name 100 characters se zyada nahi hona chahiye.',
+            'email.required'   => 'Email zaroori hai.',
+            'email.email'      => 'Valid email enter karo.',
+            'email.unique'     => 'Yeh email already registered hai.',
+            'contact.required' => 'Contact number zaroori hai.',
+            'contact.numeric'  => 'Contact sirf numbers mein hona chahiye.',
+            'contact.digits'   => 'Contact exactly 10 digits ka hona chahiye.',
+        ]);
 
         /* ── BASIC INFO ── */
         $employee->update($request->only([
@@ -348,7 +413,6 @@ class EmployeeController extends Controller
             $officialData
         );
 
-        // sync designation to employees table
         $employee->designation = $request->designation;
         $employee->save();
 

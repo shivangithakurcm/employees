@@ -36,8 +36,8 @@
                 </select>
             </div>
 
-            {{-- Shift Details Section --}}
-            <div class="col-md-12">
+            {{-- Shift col-md-6 --}}
+            <div class="col-md-6">
                 <label class="form-label">Shift</label>
                 <select name="shift_id" class="form-select">
                     <option value="">Select Shift</option>
@@ -64,17 +64,7 @@
                        class="form-control" placeholder="Type here..."
                        value="{{ $employee->officialDetail->branch ?? '' }}">
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Permission</label>
-                <input type="text" name="permission"
-                       class="form-control" placeholder="Type here..."
-                       value="{{ $employee->officialDetail->permission ?? '' }}">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Password</label>
-                <input type="password" name="password"
-                       class="form-control" placeholder="Type here...">
-            </div>
+
         </div>
 
         <div class="d-flex justify-content-between mt-4">

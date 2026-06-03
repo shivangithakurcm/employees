@@ -15,7 +15,7 @@
     <table class="table table-dark table-bordered table-hover">
         <thead>
             <tr>
-                <th>#</th>
+                <th>SNO.</th>
                 <th>Shift Name</th>
                 <th>From</th>
                 <th>To</th>

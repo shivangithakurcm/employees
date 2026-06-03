@@ -179,11 +179,12 @@
 
         <div class="d-flex align-items-center gap-3">
             <div class="dropdown">
-                <span class="rounded-circle bg-warning text-dark px-2 py-1 fw-bold dropdown-toggle"
-                      role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                      style="cursor:pointer;">
-                    A
-                </span>
+               <span style="width:32px; height:32px; border-radius:50%; background:#f0c040; 
+             color:#000; font-weight:bold; display:inline-flex; 
+             align-items:center; justify-content:center; cursor:pointer;"
+      role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    A
+</span>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
                         <form action="{{ route('logout') }}" method="POST" class="m-0">
