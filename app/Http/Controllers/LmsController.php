@@ -251,18 +251,19 @@ class LmsController extends Controller
     }
 
     // ─── DESTROY ─────────────────────────────────────────────────────
-    public function destroy(Lead $lead)
-    {
-        $lead->delete();
+   // ─── DESTROY ─────────────────────────────────────────────────────
+public function destroy(Lead $lm)
+{
+    $lm->delete();
 
-        $params = array_filter([
-            'status' => request('redirect_status'),
-            'type'   => request('redirect_type'),
-        ]);
+    $params = array_filter([
+        'status' => request('redirect_status'),
+        'type'   => request('redirect_type'),
+    ]);
 
-        return redirect()->route('admin.lms.index', $params)
-                         ->with('success', 'Lead deleted successfully.');
-    }
+    return redirect()->route('admin.lms.index', $params)
+                     ->with('success', 'Lead deleted successfully.');
+}
 
     // ─── ACTION ──────────────────────────────────────────────────────
     public function action(Request $request)
