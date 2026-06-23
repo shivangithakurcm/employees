@@ -40,10 +40,29 @@ th:last-child, td:last-child {
     padding: 3px 6px;
     font-size: 12px;
 }
+
+/* ── Mobile: Employees table fixes ── */
+@media (max-width: 768px) {
+    .table-dark td, .table-dark th {
+        padding: 6px 8px !important;
+        font-size: 13px;
+    }
+    .btn-sm {
+        padding: 4px 7px !important;
+        font-size: 11px !important;
+    }
+    /* Filter form fields stack neatly */
+    form.row.g-2 .col-md-4,
+    form.row.g-2 .col-md-3,
+    form.row.g-2 .col-md-2 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 style="color:#f0c040">Employee</h4>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h4 style="color:#f0c040" class="mb-0">Employee</h4>
     <a href="{{ route('admin.employees.create') }}" class="btn btn-gold">+ Add Employee</a>
 </div>
 
@@ -71,75 +90,77 @@ th:last-child, td:last-child {
 
 {{-- Table --}}
 <div class="card-dark">
-    <table class="table table-dark table-hover">
-        <thead>
-            <tr>
-                <th>Sno.</th>
-                <th>Name</th>
-                <th>Contact</th>
-                <th>Email</th>
-                <th>Address</th>
-                <th>Status</th>
-                <th>Created At</th>
-                <th class="text-center" style="width:90px;">Action</th>
-            </tr>
-        </thead>
+    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table class="table table-dark table-hover" style="white-space: nowrap;">
+            <thead>
+                <tr>
+                    <th>Sno.</th>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Email</th>
+                    <th>Address</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th class="text-center" style="width:90px;">Action</th>
+                </tr>
+            </thead>
 
-        <tbody>
-            @forelse($employees as $i => $emp)
-            <tr>
-                <td>{{ $employees->firstItem() + $i }}</td>
-                <td>{{ $emp->name }}</td>
-                <td>{{ $emp->contact }}</td>
-                <td>{{ $emp->email }}</td>
-                <td>{{ $emp->address }}</td>
+            <tbody>
+                @forelse($employees as $i => $emp)
+                <tr>
+                    <td>{{ $employees->firstItem() + $i }}</td>
+                    <td>{{ $emp->name }}</td>
+                    <td>{{ $emp->contact }}</td>
+                    <td>{{ $emp->email }}</td>
+                    <td>{{ $emp->address }}</td>
 
-                <td>
-                    <span class="badge {{ $emp->status === 'active' ? 'bg-success' : 'bg-danger' }}">
-                        {{ ucfirst($emp->status) }}
-                    </span>
-                </td>
+                    <td>
+                        <span class="badge {{ $emp->status === 'active' ? 'bg-success' : 'bg-danger' }}">
+                            {{ ucfirst($emp->status) }}
+                        </span>
+                    </td>
 
-                <td>{{ $emp->created_at->format('d/m/Y') }}</td>
+                    <td>{{ $emp->created_at->format('d/m/Y') }}</td>
 
-                {{-- ✅ FIXED ACTION COLUMN --}}
-                <td class="text-center p-1">
-                    <div class="d-flex justify-content-center align-items-center gap-1">
+                    {{-- ✅ FIXED ACTION COLUMN --}}
+                    <td class="text-center p-1">
+                        <div class="d-flex justify-content-center align-items-center gap-1">
 
-                        <!-- Edit -->
-                        <a href="{{ route('admin.employees.edit', $emp->id) }}"
-                           class="btn btn-sm btn-warning p-1" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </a>
+                            <!-- Edit -->
+                            <a href="{{ route('admin.employees.edit', $emp->id) }}"
+                               class="btn btn-sm btn-warning p-1" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
 
-                        <!-- View -->
-                        <a href="{{ route('admin.employees.show', $emp->id) }}"
-                           class="btn btn-sm btn-info p-1" title="View">
-                            <i class="fas fa-eye"></i>
-                        </a>
+                            <!-- View -->
+                            <a href="{{ route('admin.employees.show', $emp->id) }}"
+                               class="btn btn-sm btn-info p-1" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
 
-                        <!-- Toggle -->
-                        <form action="{{ route('admin.employees.toggle', $emp->id) }}"
-                              method="POST" style="display:inline;">
-                            @csrf
-                            <button type="submit"
-                                class="btn btn-sm {{ $emp->status === 'active' ? 'btn-danger' : 'btn-success' }} p-1"
-                                title="Toggle Status">
-                                <i class="fas {{ $emp->status === 'active' ? 'fa-ban' : 'fa-check' }}"></i>
-                            </button>
-                        </form>
+                            <!-- Toggle -->
+                            <form action="{{ route('admin.employees.toggle', $emp->id) }}"
+                                  method="POST" style="display:inline;">
+                                @csrf
+                                <button type="submit"
+                                    class="btn btn-sm {{ $emp->status === 'active' ? 'btn-danger' : 'btn-success' }} p-1"
+                                    title="Toggle Status">
+                                    <i class="fas {{ $emp->status === 'active' ? 'fa-ban' : 'fa-check' }}"></i>
+                                </button>
+                            </form>
 
-                    </div>
-                </td>
+                        </div>
+                    </td>
 
-            </tr>
-            @empty
-            <tr>
-                <td colspan="8" class="text-center text-muted">No employees found.</td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="8" class="text-center text-muted">No employees found.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     {{ $employees->withQueryString()->links() }}
 </div>

@@ -80,5 +80,10 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::delete('/shift/{id}',        [ShiftController::class, 'destroy'])->name('shift.destroy');
 
     });
+    // routes/web.php
+Route::prefix('employee')->middleware('auth:employee')->group(function () {
+    Route::get('/dashboard', [EmployeeDashboardController::class, 'index'])->name('employee.dashboard');
+    Route::resource('leads', EmployeeLeadController::class);
+});
 
 });

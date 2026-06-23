@@ -11,6 +11,79 @@ svg.w-5.h-5 { display: none; }
 .pagination .active .page-link { background: #000 !important; color: #f0c040 !important; }
 .form-control::placeholder { color: #bbb !important; opacity: 1 !important; }
 .form-control { color: #fff !important; }
+
+/* ── Action menu: always show 3-dot dropdown, hide old button row everywhere ── */
+.action-buttons-row { display: none !important; }
+
+.action-dropdown-wrap { position: relative; display: inline-block; }
+.action-dots-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 7px;
+    background: #2a2a2a;
+    color: #f0c040;
+    border: 1px solid #444;
+    font-size: 16px;
+    cursor: pointer;
+}
+.action-dots-btn:hover { background: #333; }
+
+.action-dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 40px;
+    background: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 8px;
+    min-width: 150px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.5);
+    z-index: 50;
+    overflow: hidden;
+}
+.action-dropdown-menu.open { display: block !important; }
+.action-dropdown-menu button,
+.action-dropdown-menu a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+.action-dropdown-menu button:hover,
+.action-dropdown-menu a:hover { background: #2a2a2a; }
+.action-dropdown-menu .text-danger-item { color: #ff6b6b; }
+.action-dropdown-menu .text-disabled-item { color: #666; cursor: not-allowed; }
+
+/* ── Mobile: other Leads table fixes (tabs, padding) ── */
+@media (max-width: 768px) {
+    /* Sticky Action column band karo, taaki Sno/Name bhi normal scroll mein dikhein */
+    th[style*="sticky"], td[style*="sticky"] {
+        position: static !important;
+    }
+    .table-dark td, .table-dark th {
+        padding: 6px 8px !important;
+    }
+    /* Tabs ek line mein force-fit na ho, wrap ho jaaye */
+    .d-flex.gap-2.mb-4 {
+        flex-wrap: wrap;
+    }
+    .tab-btn {
+        flex: 1 1 45% !important;
+        font-size: 13px !important;
+        padding: 7px 10px !important;
+    }
+}
 </style>
 
 @php
@@ -297,7 +370,8 @@ svg.w-5.h-5 { display: none; }
                     <td>{{ $lead->created_at ? $lead->created_at->format('d-m-Y') : '-' }}</td>
                     @endif
                     <td style="position:sticky; right:0; background:#212529; white-space:nowrap; vertical-align:middle;">
-                        <div class="d-flex gap-1">
+                        {{-- Desktop: normal button row --}}
+                        <div class="d-flex gap-1 flex-wrap action-buttons-row" style="max-width: 140px;">
                             <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info" title="View">
                                 <i class="fas fa-eye"></i>
                             </a>
@@ -333,16 +407,55 @@ svg.w-5.h-5 { display: none; }
                                 onclick="confirmDelete({{ $lead->id }})">
                                 <i class="fas fa-trash"></i>
                             </button>
-                            {{-- ✅ CHANGE 1: Delete form mein redirect_status aur redirect_type add kiya --}}
-                            <form id="deleteForm{{ $lead->id }}"
-                                  action="{{ route('admin.lms.destroy', $lead->id) }}"
-                                  method="POST" style="display:none;">
-                                @csrf
-                                @method('DELETE')
-                                <input type="hidden" name="redirect_status" value="{{ $currentStatus }}">
-                                <input type="hidden" name="redirect_type" value="{{ $currentType }}">
-                            </form>
                         </div>
+
+                        {{-- Mobile: 3-dot dropdown menu --}}
+                        <div class="action-dropdown-wrap">
+                            <button type="button" class="action-dots-btn" onclick="toggleActionDots(this, {{ $lead->id }})">
+                                <i class="fas fa-ellipsis-vertical"></i>
+                            </button>
+                            <div class="action-dropdown-menu" id="dots-{{ $lead->id }}">
+                                <a href="{{ route('admin.lms.show', $lead->id) }}">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{{ route('admin.lms.edit', $lead->id) }}">
+                                    <i class="fas fa-pen"></i> Edit
+                                </a>
+                                @if(!$showLostCols && !$showWonCols && in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent','negotiation']))
+                                    <button type="button"
+                                        onclick="closeAllDots(); setLead({{ $lead->id }}, '{{ $lead->status }}', {
+                                            name: '{{ addslashes(trim($lead->first_name . ' ' . $lead->last_name)) }}',
+                                            contact: '{{ $lead->contact_number }}',
+                                            email: '{{ addslashes($lead->email ?? '') }}',
+                                            city: '{{ addslashes($lead->city ?? '') }}',
+                                            state: '{{ addslashes($lead->state ?? '') }}',
+                                            country: '{{ addslashes($lead->country ?? '') }}'
+                                        }); var m = new bootstrap.Modal(document.getElementById('actionModal')); m.show();">
+                                        <i class="fas fa-bolt"></i> Action
+                                    </button>
+                                @else
+                                    <span class="text-disabled-item"><i class="fas fa-bolt"></i> Action</span>
+                                @endif
+                                <button type="button"
+                                    onclick="closeAllDots(); loadHistory({{ $lead->id }}); var m = new bootstrap.Modal(document.getElementById('historyModal')); m.show();">
+                                    <i class="fas fa-history"></i> History
+                                </button>
+                                <button type="button" class="text-danger-item"
+                                    onclick="closeAllDots(); confirmDelete({{ $lead->id }});">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ✅ CHANGE 1: Delete form mein redirect_status aur redirect_type add kiya --}}
+                        <form id="deleteForm{{ $lead->id }}"
+                              action="{{ route('admin.lms.destroy', $lead->id) }}"
+                              method="POST" style="display:none;">
+                            @csrf
+                            @method('DELETE')
+                            <input type="hidden" name="redirect_status" value="{{ $currentStatus }}">
+                            <input type="hidden" name="redirect_type" value="{{ $currentType }}">
+                        </form>
                     </td>
                 </tr>
                 @empty
@@ -704,6 +817,24 @@ svg.w-5.h-5 { display: none; }
 
 @push('scripts')
 <script>
+// ─── Mobile 3-dot action dropdown ──────────────────────────────────
+function closeAllDots() {
+    document.querySelectorAll('.action-dropdown-menu.open').forEach(function(el) {
+        el.classList.remove('open');
+    });
+}
+function toggleActionDots(btn, id) {
+    var menu = document.getElementById('dots-' + id);
+    var wasOpen = menu.classList.contains('open');
+    closeAllDots();
+    if (!wasOpen) menu.classList.add('open');
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.action-dropdown-wrap')) {
+        closeAllDots();
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
 
     // ─── Action Modal ────────────────────────────────────────────────
