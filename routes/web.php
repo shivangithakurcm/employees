@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\Master\DesignationController;
 use App\Http\Controllers\Admin\Master\ProjectTypeController;
 use App\Http\Controllers\Admin\Master\ShiftController;
+use App\Http\Controllers\Admin\FollowUpController; // ✅ Admin namespace
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -24,6 +25,13 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/index', fn() => view('index'))->name('index');
+
+    // ✅ Follow-up Routes — admin group ke andar
+    Route::prefix('followups')->name('followups.')->group(function () {
+        Route::get('/today',        [FollowUpController::class, 'today'])->name('today');
+        Route::post('/store',       [FollowUpController::class, 'store'])->name('store');
+        Route::patch('/{id}/done',  [FollowUpController::class, 'markDone'])->name('done');
+    });
 
     // ── Employee Routes ───────────────────────────────────────────────────────
     Route::get('/employees',              [EmployeeController::class, 'index'])->name('employees.index');
@@ -59,19 +67,16 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // ── Master Routes ─────────────────────────────────────────────────────────
     Route::prefix('master')->name('master.')->group(function () {
 
-        // Designation
         Route::get('/designation',         [DesignationController::class, 'index'])->name('designation.index');
         Route::post('/designation',        [DesignationController::class, 'store'])->name('designation.store');
         Route::put('/designation/{id}',    [DesignationController::class, 'update'])->name('designation.update');
         Route::delete('/designation/{id}', [DesignationController::class, 'destroy'])->name('designation.destroy');
 
-        // Project Type
         Route::get('/project-type',         [ProjectTypeController::class, 'index'])->name('project_type.index');
         Route::post('/project-type',        [ProjectTypeController::class, 'store'])->name('project_type.store');
         Route::put('/project-type/{id}',    [ProjectTypeController::class, 'update'])->name('project_type.update');
         Route::delete('/project-type/{id}', [ProjectTypeController::class, 'destroy'])->name('project_type.destroy');
 
-        // Shift
         Route::get('/shift',                [ShiftController::class, 'index'])->name('shift.index');
         Route::get('/shift/create',         [ShiftController::class, 'create'])->name('shift.create');
         Route::post('/shift',               [ShiftController::class, 'store'])->name('shift.store');
@@ -80,10 +85,5 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::delete('/shift/{id}',        [ShiftController::class, 'destroy'])->name('shift.destroy');
 
     });
-    // routes/web.php
-Route::prefix('employee')->middleware('auth:employee')->group(function () {
-    Route::get('/dashboard', [EmployeeDashboardController::class, 'index'])->name('employee.dashboard');
-    Route::resource('leads', EmployeeLeadController::class);
-});
 
 });

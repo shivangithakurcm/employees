@@ -65,6 +65,28 @@
                        value="{{ $employee->officialDetail->branch ?? '' }}">
             </div>
 
+            {{-- ✅ NEW: Login Role --}}
+            <div class="col-md-6">
+                <label class="form-label">Login Role</label>
+                <select name="role" class="form-select">
+                    <option value="">Select Role</option>
+                    <option value="manager" {{ old('role', $employee->user?->getRoleNames()->first() ?? '') == 'manager' ? 'selected' : '' }}>Manager</option>
+                    <option value="sales" {{ old('role', $employee->user?->getRoleNames()->first() ?? '') == 'sales' ? 'selected' : '' }}>Sales</option>
+                </select>
+            </div>
+
+            {{-- ✅ NEW: Login Password --}}
+            <div class="col-md-6">
+                <label class="form-label">
+                    Login Password
+                    @if($employee->user_id)
+                        <small style="color:#888;">(blank rakho agar change nahi karna)</small>
+                    @endif
+                </label>
+                <input type="password" name="password"
+                       class="form-control" placeholder="{{ $employee->user_id ? 'Leave blank to keep current' : 'Set login password' }}">
+            </div>
+
         </div>
 
         <div class="d-flex justify-content-between mt-4">

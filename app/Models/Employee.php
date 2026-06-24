@@ -28,7 +28,8 @@ class Employee extends Model
         'city',
         'pincode',
         'status',
-        'password'
+        'password',
+        'user_id',
     ];
 
     // ==============================
@@ -62,6 +63,11 @@ class Employee extends Model
     {
         return $this->hasOne(EmployeeOfficialDetail::class);
     }
+
+    public function user()
+{
+    return $this->belongsTo(\App\Models\User::class);
+}
 
     
 }

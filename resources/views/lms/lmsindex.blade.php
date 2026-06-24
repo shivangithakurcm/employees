@@ -103,6 +103,9 @@ svg.w-5.h-5 { display: none; }
     $showWonCols = $isWon;
 @endphp
 
+
+
+
 {{-- Status Tabs --}}
 <div class="d-flex gap-2 mb-4" style="width:100%;">
     <a href="{{ route('admin.lms.index') }}"
@@ -271,6 +274,7 @@ svg.w-5.h-5 { display: none; }
                         <th>Milestone</th>
                         <th>Token Received</th>
                     @endif
+                 
                     <th>Status</th>
                     @if(!$showLostCols && !$showWonCols)
                     <th>Add Date</th>

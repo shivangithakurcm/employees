@@ -46,11 +46,11 @@
 
 </div>
 
-{{-- Bottom Row: Pipeline + Donut --}}
+{{-- Bottom Row: Pipeline + Donut + Followups --}}
 <div class="row g-3">
 
     {{-- Pipeline Bars --}}
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card-dark">
             <p style="color:#f0c040;font-size:13px;font-weight:600;margin:0 0 16px;">
                 <i class="fas fa-chart-bar me-2"></i>Lead Pipeline
@@ -81,7 +81,7 @@
     </div>
 
     {{-- Donut Chart (SVG) --}}
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card-dark">
             <p style="color:#f0c040;font-size:13px;font-weight:600;margin:0 0 16px;">
                 <i class="fas fa-chart-pie me-2"></i>Status Breakdown
@@ -103,8 +103,8 @@
                     <circle cx="50" cy="50" r="36" fill="none" stroke="#333" stroke-width="16"/>
                     @foreach($segs as $seg)
                         @php
-                            $arc    = ($tot > 0) ? ($seg['val'] / $tot) * $circ : 0;
-                            $dash   = $arc . ' ' . ($circ - $arc);
+                            $arc  = ($tot > 0) ? ($seg['val'] / $tot) * $circ : 0;
+                            $dash = $arc . ' ' . ($circ - $arc);
                         @endphp
                         <circle cx="50" cy="50" r="36" fill="none"
                             stroke="{{ $seg['color'] }}" stroke-width="16"
@@ -122,13 +122,90 @@
                 <div style="display:flex;flex-direction:column;gap:10px;flex:1;">
                     @foreach($segs as $seg)
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <div style="width:9px;height:9px;border-radius:50%;background:{{ $seg['color'] }};flex-shrink:0;"></div>
+                        <div style="width:9px;height:9px;border-radius:50%;
+                                    background:{{ $seg['color'] }};flex-shrink:0;"></div>
                         <span style="color:#aaa;font-size:12px;flex:1;">{{ $seg['label'] }}</span>
                         <span style="color:#ccc;font-size:12px;font-weight:600;">{{ $seg['val'] }}</span>
                     </div>
                     @endforeach
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- Follow-ups Vertical --}}
+    <div class="col-md-4">
+        <div class="card-dark" style="height:100%;">
+            <p style="color:#f0c040;font-size:13px;font-weight:600;margin:0 0 16px;">
+                <i class="fas fa-bell me-2"></i>Follow-ups
+            </p>
+
+            {{-- Today --}}
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:12px;border-radius:8px;background:#2a1f0a;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:32px;height:32px;background:#3a2a0a;border-radius:8px;
+                                display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-calendar-check" style="color:#EF9F27;font-size:13px;"></i>
+                    </div>
+                    <div>
+                        <p style="color:#ccc;font-size:12px;margin:0;font-weight:600;">Today's</p>
+                        <p style="color:#aaa;font-size:11px;margin:0;">Follow-ups</p>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="color:#f0c040;font-size:1.4rem;font-weight:bold;display:block;">
+                        {{ $followupStats['today'] }}
+                    </span>
+                    <a href="{{ route('admin.followups.today') }}"
+                       style="color:#EF9F27;font-size:10px;text-decoration:none;">View →</a>
+                </div>
+            </div>
+
+            {{-- Overdue --}}
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:12px;border-radius:8px;background:#2d1515;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:32px;height:32px;background:#3d1515;border-radius:8px;
+                                display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-exclamation-circle" style="color:#E24B4A;font-size:13px;"></i>
+                    </div>
+                    <div>
+                        <p style="color:#ccc;font-size:12px;margin:0;font-weight:600;">Overdue</p>
+                        <p style="color:#aaa;font-size:11px;margin:0;">Follow-ups</p>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="color:#f0c040;font-size:1.4rem;font-weight:bold;display:block;">
+                        {{ $followupStats['overdue'] }}
+                    </span>
+                    <a href="{{ route('admin.followups.today') }}"
+                       style="color:#E24B4A;font-size:10px;text-decoration:none;">Fix →</a>
+                </div>
+            </div>
+
+            {{-- Upcoming --}}
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:12px;border-radius:8px;background:#1a1a3a;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:32px;height:32px;background:#252550;border-radius:8px;
+                                display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-clock" style="color:#7F77DD;font-size:13px;"></i>
+                    </div>
+                    <div>
+                        <p style="color:#ccc;font-size:12px;margin:0;font-weight:600;">Upcoming</p>
+                        <p style="color:#aaa;font-size:11px;margin:0;">Next 7 Days</p>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="color:#f0c040;font-size:1.4rem;font-weight:bold;display:block;">
+                        {{ $followupStats['upcoming'] }}
+                    </span>
+                    <a href="{{ route('admin.followups.today') }}"
+                       style="color:#7F77DD;font-size:10px;text-decoration:none;">View →</a>
+                </div>
+            </div>
+
         </div>
     </div>
 

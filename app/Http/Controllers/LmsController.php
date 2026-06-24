@@ -132,11 +132,16 @@ class LmsController extends Controller
     }
 
     // ─── SHOW ────────────────────────────────────────────────────────
-    public function show(Lead $lm)
-    {
-        return view('lms.show', compact('lm'));
-    }
+  // ─── SHOW ────────────────────────────────────────────────────────
+public function show(Lead $lm)
+{
+    $followUps = \App\Models\FollowUp::where('lead_id', $lm->id)
+                    ->orderBy('date', 'desc')
+                    ->orderBy('time', 'desc')
+                    ->get();
 
+    return view('lms.show', compact('lm', 'followUps'));
+}
     // ─── EDIT ────────────────────────────────────────────────────────
     public function edit(Lead $lm)
     {

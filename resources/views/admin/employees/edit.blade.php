@@ -270,6 +270,17 @@
             <input type="text" name="permission" class="form-control" placeholder="Type here..."
                    value="{{ $employee->officialDetail->permission ?? '' }}">
         </div>
+
+        {{-- ✅ NEW: Login Role --}}
+        <div class="col-md-4">
+            <label class="form-label">Login Role</label>
+            <select name="role" class="form-select">
+                <option value="">— No Change —</option>
+                <option value="manager" {{ ($employee->user?->getRoleNames()->first() ?? '') == 'manager' ? 'selected' : '' }}>Manager</option>
+                <option value="sales" {{ ($employee->user?->getRoleNames()->first() ?? '') == 'sales' ? 'selected' : '' }}>Sales</option>
+            </select>
+        </div>
+
         <div class="col-md-4">
             <label class="form-label">Password <small class="text-muted">(blank = no change)</small></label>
             <input type="password" name="password" class="form-control" placeholder="New password...">
