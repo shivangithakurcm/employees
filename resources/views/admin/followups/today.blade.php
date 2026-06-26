@@ -63,6 +63,72 @@
 
 </div>
 
+{{-- Employee Stats Collapse --}}
+@if(auth()->user()->hasRole('admin') && $employees->count())
+<div class="mb-4">
+    <button onclick="toggleEmpStats()" id="empStatsBtn"
+        style="background:#1a1a1a; border:1px solid #f0c040; color:#f0c040;
+               border-radius:8px; padding:7px 18px; font-size:13px; cursor:pointer;
+               display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-users"></i>
+        <span>Show Employee Status</span>
+        <i class="fas fa-chevron-down" id="empStatsChevron"></i>
+    </button>
+
+    <div id="empStatsBox" style="display:none; margin-top:12px;">
+        <div class="card-dark" style="padding:0; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid #2a2a2a; background:#111;">
+                        <th style="color:#888; font-size:12px; padding:10px 14px; text-align:left;">Employee</th>
+                        <th style="color:#888; font-size:12px; padding:10px 14px; text-align:center;">Total</th>
+                        <th style="color:#888; font-size:12px; padding:10px 14px; text-align:center;">Follow Up</th>
+                        <th style="color:#888; font-size:12px; padding:10px 14px; text-align:center;">Won</th>
+                        <th style="color:#888; font-size:12px; padding:10px 14px; text-align:center;">Lost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($employees as $emp)
+                    <tr style="border-bottom:1px solid #1a1a1a; transition:background 0.2s;"
+                        onmouseover="this.style.background='#1a1a1a'"
+                        onmouseout="this.style.background='transparent'">
+                        <td style="padding:10px 14px;">
+                            <span style="color:#f0c040; font-size:13px; font-weight:600;">
+                                {{ $emp->name }}
+                            </span>
+                        </td>
+                        <td style="padding:10px 14px; text-align:center;">
+                            <span style="color:#fff; font-size:14px; font-weight:700;">
+                                {{ $emp->total_leads }}
+                            </span>
+                        </td>
+                        <td style="padding:10px 14px; text-align:center;">
+                            <span style="background:#0d1b3e; color:#60a5fa; font-size:12px;
+                                         padding:2px 12px; border-radius:99px; font-weight:600;">
+                                {{ $emp->followup_leads }}
+                            </span>
+                        </td>
+                        <td style="padding:10px 14px; text-align:center;">
+                            <span style="background:#0f2a1a; color:#4ade80; font-size:12px;
+                                         padding:2px 12px; border-radius:99px; font-weight:600;">
+                                {{ $emp->won_leads }}
+                            </span>
+                        </td>
+                        <td style="padding:10px 14px; text-align:center;">
+                            <span style="background:#2d1515; color:#f87171; font-size:12px;
+                                         padding:2px 12px; border-radius:99px; font-weight:600;">
+                                {{ $emp->lost_leads }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- Overdue Table --}}
 @if($overdueList->count() > 0)
 <div class="card-dark mb-4">
@@ -73,7 +139,7 @@
         <table style="width:100%;border-collapse:collapse;">
             <thead>
                 <tr style="border-bottom:1px solid #2a2a2a;">
-                    <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">#</th>
+                    <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">SNO.</th>
                     <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">Lead</th>
                     <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">Due Date</th>
                     <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">Time</th>
@@ -144,7 +210,7 @@
         <table style="width:100%;border-collapse:collapse;">
             <thead>
                 <tr style="border-bottom:1px solid #2a2a2a;">
-                    <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">#</th>
+                    <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">SNO.</th>
                     <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">Lead</th>
                     <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">Time</th>
                     <th style="color:#888;font-size:12px;font-weight:500;padding:8px 12px;text-align:left;">Comment</th>
@@ -200,3 +266,18 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+function toggleEmpStats() {
+    var box      = document.getElementById('empStatsBox');
+    var chevron  = document.getElementById('empStatsChevron');
+    var btnSpan  = document.querySelector('#empStatsBtn span');
+    var isHidden = box.style.display === 'none';
+
+    box.style.display     = isHidden ? 'block' : 'none';
+    btnSpan.textContent   = isHidden ? 'Hide Employee Stats' : 'Show Employee Stats';
+    chevron.className     = isHidden ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+}
+</script>
+@endpush

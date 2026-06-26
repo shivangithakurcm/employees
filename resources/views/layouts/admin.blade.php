@@ -6,26 +6,68 @@
     <title>Admin Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { background: #1a1a1a; color: #fff; }
+        :root {
+            --ink: #0b0e1a;
+            --panel: #12162a;
+            --panel-light: #181d35;
+            --sidebar: #0e1124;
+            --line: #262c4a;
+            --text-dim: #8d93b0;
+            --amber: #f5a623;
+            --amber-deep: #d68a0f;
+            --teal: #2dd4bf;
+            --red: #e24b4a;
+            --green: #1d9e75;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--ink);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, .brand, .topbar span {
+            font-family: 'Sora', sans-serif;
+        }
+
         .sidebar {
             width: 220px; min-height: 100vh;
-            background: #111; position: fixed;
+            background: var(--sidebar); position: fixed;
             top: 0; left: 0; padding: 20px 0;
             overflow-y: auto;
             z-index: 1000;
+            border-right: 1px solid var(--line);
         }
         .sidebar .brand {
-            color: #f0c040; font-weight: bold;
-            font-size: 1.2rem; padding: 10px 20px 30px;
+            color: var(--amber); font-weight: 700;
+            font-size: 1.25rem; padding: 10px 20px 26px;
+            letter-spacing: -0.01em;
+            display: flex; align-items: center; gap: 9px;
         }
+        .sidebar .brand .glyph {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: linear-gradient(155deg, var(--amber), var(--amber-deep));
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .sidebar .brand .glyph i { color: var(--ink); font-size: 12px; }
+
         .sidebar a {
-            display: block; color: #ccc;
-            padding: 12px 20px; text-decoration: none;
+            display: block; color: var(--text-dim);
+            padding: 13px 20px; text-decoration: none;
+            font-size: 1rem;
+            border-left: 3px solid transparent;
+            transition: color .15s ease, background .15s ease, border-color .15s ease;
         }
+        .sidebar a i { font-size: 1rem; width: 18px; text-align: center; }
         .sidebar a:hover, .sidebar a.active {
-            color: #f0c040; background: #222;
-            border-left: 3px solid #f0c040;
+            color: var(--amber); background: var(--panel);
+            border-left-color: var(--amber);
         }
         .master-toggle {
             display: flex; align-items: center;
@@ -33,79 +75,95 @@
             cursor: pointer;
         }
         .master-toggle.active-parent {
-            color: #f0c040 !important;
-            background: #222;
-            border-left: 3px solid #f0c040;
+            color: var(--amber) !important;
+            background: var(--panel);
+            border-left-color: var(--amber);
         }
         .master-submenu {
-            background: #0d0d0d;
+            background: #0a0c1a;
             overflow: hidden;
             max-height: 0;
             transition: max-height 0.3s ease;
         }
         .master-submenu.open { max-height: 200px; }
         .master-submenu a {
-            padding: 9px 20px 9px 38px;
-            font-size: 13px; color: #999;
+            padding: 10px 20px 10px 38px;
+            font-size: 0.92rem; color: #6b7090;
             border-left: none !important;
             display: flex; align-items: center; gap: 8px;
         }
         .master-submenu a:hover {
-            color: #f0c040; background: #1a1a1a;
+            color: var(--amber); background: var(--panel-light);
             border-left: none !important;
         }
         .master-submenu a.active {
-            color: #f0c040; font-weight: 600;
-            background: #1a1a1a; border-left: none !important;
+            color: var(--amber); font-weight: 600;
+            background: var(--panel-light); border-left: none !important;
         }
         .master-submenu a::before {
             content: ''; width: 5px; height: 5px;
             border-radius: 50%; background: currentColor; flex-shrink: 0;
         }
         #masterArrow { font-size: 11px; transition: transform 0.3s ease; }
+
         .main-content { margin-left: 220px; padding: 20px; transition: margin-left .25s ease; }
+
         .topbar {
             display: flex; justify-content: space-between;
-            align-items: center; background: #111;
-            padding: 12px 20px; margin-bottom: 25px; border-radius: 8px;
+            align-items: center; background: var(--panel);
+            border: 1px solid var(--line);
+            padding: 12px 20px; margin-bottom: 25px; border-radius: 10px;
         }
+        .topbar span { color: var(--amber); font-weight: 600; font-size: 0.98rem; }
+
         .stat-card {
-            background: #222; border: 1px solid #333;
+            background: var(--panel); border: 1px solid var(--line);
             border-radius: 10px; padding: 25px;
             text-align: center; margin-bottom: 20px;
         }
-        .stat-card h3 { color: #f0c040; font-size: 2rem; margin: 0; }
-        .stat-card p { color: #aaa; margin: 5px 0 0; }
-        .btn-gold { background: #f0c040; color: #000; border: none; font-weight: bold; }
-        .btn-gold:hover { background: #d4a800; color: #000; }
-        .card-dark { background: #1e1e1e; border: 1px solid #333; border-radius: 10px; padding: 25px; }
-        .table-dark th { background: #222; color: #f0c040; }
-        .form-control, .form-select { background: #222; border: 1px solid #444; color: #fff; }
-        .form-control:focus, .form-select:focus {
-            background: #2a2a2a; color: #fff;
-            border-color: #f0c040; box-shadow: none;
+        .stat-card h3 { color: var(--amber); font-size: 2rem; margin: 0; font-family: 'Sora', sans-serif; font-weight: 700; }
+        .stat-card p { color: var(--text-dim); margin: 5px 0 0; }
+
+        .btn-gold {
+            background: linear-gradient(155deg, var(--amber), var(--amber-deep));
+            color: var(--ink); border: none; font-weight: 700;
         }
-        .form-label { color: #ccc; }
+        .btn-gold:hover { filter: brightness(1.05); color: var(--ink); }
+
+        .card-dark { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 25px; }
+        .table-dark th { background: var(--panel-light); color: var(--amber); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; letter-spacing: 0.03em; text-transform: uppercase; }
+
+        .form-control, .form-select {
+            background: var(--panel-light); border: 1px solid var(--line); color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            background: #1d2340; color: #fff;
+            border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,166,35,0.14);
+        }
+        .form-label { color: var(--text-dim); font-size: 0.82rem; font-weight: 600; }
+
         .step-indicator { display: flex; gap: 10px; margin-bottom: 25px; }
         .step-indicator .step {
             width: 32px; height: 32px; border-radius: 50%;
-            background: #444; color: #fff;
+            background: var(--panel-light); color: #fff;
             display: flex; align-items: center;
             justify-content: center; font-weight: bold;
+            border: 1px solid var(--line);
         }
-        .step-indicator .step.active { background: #f0c040; color: #000; }
-        .step-indicator .step.done { background: #28a745; }
+        .step-indicator .step.active { background: var(--amber); color: var(--ink); border-color: var(--amber); }
+        .step-indicator .step.done { background: var(--green); border-color: var(--green); }
 
-        /* Role badge in sidebar */
         .role-badge {
             font-size: 10px; padding: 2px 8px; border-radius: 99px;
             font-weight: 600; margin: 0 20px 16px;
             display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.02em;
         }
 
         .mobile-menu-btn {
-            display: none; background: #111; color: #f0c040;
-            border: 1px solid #333; font-size: 18px;
+            display: none; background: var(--panel); color: var(--amber);
+            border: 1px solid var(--line); font-size: 18px;
             padding: 6px 12px; border-radius: 6px; cursor: pointer;
         }
         .sidebar-overlay {
@@ -113,6 +171,13 @@
             background: rgba(0,0,0,0.6); z-index: 999;
         }
         .sidebar-overlay.open { display: block; }
+
+        .alert-danger {
+            background: rgba(226, 75, 74, 0.1);
+            border: 1px solid rgba(226, 75, 74, 0.35);
+            color: #ff9b9b;
+            border-radius: 9px;
+        }
 
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
@@ -141,7 +206,9 @@
 {{-- ═══ SIDEBAR ═══ --}}
 <div class="sidebar" id="sidebar">
     <div class="brand">
-        <i class="fas fa-bolt me-1"></i> ADMIN
+        <span class="glyph"><i class="fas fa-bolt"></i></span>
+        @hasrole('admin') ADMIN @endhasrole
+        @hasrole('employee') EMPLOYEE @endhasrole
     </div>
 
     {{-- Role Badge --}}
@@ -161,13 +228,27 @@
                 <i class="fas fa-user me-1"></i> Sales
             </span>
         @endhasrole
+        @hasrole('employee')
+            <span class="role-badge" style="background:#0a1a2a; color:#60a5fa;">
+                <i class="fas fa-user me-1"></i> Employee
+            </span>
+        @endhasrole
     @endauth
 
-    {{-- Dashboard — sab dekh sakte hain --}}
+    {{-- Dashboard --}}
+    @hasrole('admin')
     <a href="{{ route('admin.dashboard') }}"
        class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
         <i class="fas fa-tachometer-alt me-2"></i> Dashboard
     </a>
+    @endhasrole
+
+    @hasrole('employee')
+    <a href="{{ route('admin.employee.dashboard') }}"
+       class="{{ request()->routeIs('admin.employee.dashboard') ? 'active' : '' }}">
+        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+    </a>
+    @endhasrole
 
     {{-- Employee — sirf Admin --}}
     @hasrole('admin')
@@ -177,11 +258,12 @@
     </a>
     @endhasrole
 
-    {{-- LMS — Admin + Manager + Sales --}}
-    @hasanyrole('admin|manager|sales')
+    {{-- LMS — Admin + Employee --}}
+    @hasanyrole('admin|manager|sales|employee')
     <a href="{{ route('admin.lms.index') }}"
        class="{{ request()->routeIs('admin.lms.*') ? 'active' : '' }}">
-        <i class="fas fa-chart-line me-2"></i> LMS
+        <i class="fas fa-chart-line me-2"></i>
+        @hasrole('employee') My Leads @else LMS @endhasrole
     </a>
     @endhasanyrole
 
@@ -193,17 +275,23 @@
     </a>
     @endhasanyrole
 
-    {{-- Follow-ups — sab dekh sakte hain --}}
+    {{-- Follow-ups --}}
     @auth
     <a href="{{ route('admin.followups.today') }}"
        class="{{ request()->routeIs('admin.followups.*') ? 'active' : '' }}">
         <i class="fas fa-bell me-2"></i> Follow-ups
         @php
-            $pendingCount = \App\Models\FollowUp::whereDate('date', \Carbon\Carbon::today())
-                ->where('status', 'pending')->count();
+            $pendingCount = \App\Models\FollowUp::whereHas('lead', function($q) {
+                                if(auth()->user()->hasRole('employee')) {
+                                    $q->where('assigned_to', auth()->id());
+                                }
+                            })
+                            ->whereDate('date', \Carbon\Carbon::today())
+                            ->where('status', 'pending')
+                            ->count();
         @endphp
         @if($pendingCount > 0)
-            <span style="background:#E24B4A; color:#fff; font-size:10px;
+            <span style="background:var(--red); color:#fff; font-size:10px;
                          padding:1px 6px; border-radius:99px; margin-left:4px;">
                 {{ $pendingCount }}
             </span>
@@ -246,26 +334,28 @@
             <button class="mobile-menu-btn" onclick="toggleSidebar()" type="button">
                 <i class="fas fa-bars"></i>
             </button>
-            <span style="color:#f0c040">@yield('page-title', 'Dashboard')</span>
+            <span>@yield('page-title', 'Dashboard')</span>
         </div>
 
         <div class="d-flex align-items-center gap-3">
             <div class="dropdown">
-                <span style="width:32px; height:32px; border-radius:50%; background:#f0c040;
-                             color:#000; font-weight:bold; display:inline-flex;
-                             align-items:center; justify-content:center; cursor:pointer;"
+                <span style="width:32px; height:32px; border-radius:50%;
+                             background:linear-gradient(155deg, var(--amber), var(--amber-deep));
+                             color:var(--ink); font-weight:bold; display:inline-flex;
+                             align-items:center; justify-content:center; cursor:pointer;
+                             font-family:'Sora',sans-serif;"
                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
                 </span>
                 <ul class="dropdown-menu dropdown-menu-end"
-                    style="background:#1e1e1e; border:1px solid #333;">
+                    style="background:var(--panel); border:1px solid var(--line);">
                     <li>
                         <span class="dropdown-item-text"
-                              style="color:#aaa; font-size:12px; padding:8px 16px;">
+                              style="color:var(--text-dim); font-size:12px; padding:8px 16px;">
                             {{ auth()->user()->name ?? '' }}
                         </span>
                     </li>
-                    <li><hr class="dropdown-divider" style="border-color:#333;"></li>
+                    <li><hr class="dropdown-divider" style="border-color:var(--line);"></li>
                     <li>
                         <form action="{{ route('logout') }}" method="POST" class="m-0">
                             @csrf
@@ -284,7 +374,7 @@
     @if(session('success'))
     <div id="successToast"
          style="position:fixed; top:20px; right:20px; z-index:999999;
-                background:#198754; color:#fff; padding:12px 20px;
+                background:var(--green); color:#fff; padding:12px 20px;
                 border-radius:8px; font-size:14px; font-weight:500;
                 box-shadow:0 4px 15px rgba(0,0,0,0.4);
                 display:flex; align-items:center; gap:12px; max-width:90vw;">

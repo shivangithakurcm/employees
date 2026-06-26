@@ -280,7 +280,7 @@
             <a href="{{ route('admin.lms.show', $lm->id) }}" class="btn btn-secondary me-2">Cancel</a>
             <button type="button" id="draftBtn" class="btn btn-outline-warning me-2">Save as Draft</button>
             <button type="button" id="updateBtn" class="btn btn-gold">Update Lead</button>
-            <button type="submit" id="submitBtn" hidden></button>
+           <button type="submit" id="submitBtn" style="display:none;"></button>
         </div>
     </form>
 </div>
@@ -343,9 +343,10 @@ draftBtn.addEventListener('click', function() {
 });
 
 cancelBtn.addEventListener('click', function() { modal.style.display = 'none'; });
+// ✅ Naya
 confirmBtn.addEventListener('click', function() {
     modal.style.display = 'none';
-    submitBtn.click();
+    submitBtn.closest('form').submit();
 });
 </script>
 @endpush

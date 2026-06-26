@@ -102,6 +102,20 @@ svg.w-5.h-5 { display: none; }
     $isWon = $currentStatus === 'won';
     $showWonCols = $isWon;
 @endphp
+{{-- Session Alerts --}}
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
 
 
 
@@ -180,14 +194,14 @@ svg.w-5.h-5 { display: none; }
         <div class="col-auto">
             <a href="{{ route('admin.lms.index') }}" class="btn btn-outline-secondary">Reset</a>
         </div>
-        @if(!$isFollowUp)
-        <div class="col-auto">
-            <button type="button" class="btn btn-gold"
-                data-bs-toggle="modal" data-bs-target="#addLeadModal">
-                <i class="fas fa-plus me-1"></i> Add Lead
-            </button>
-        </div>
-        @endif
+      @if(!$isFollowUp && auth()->user()->hasRole('admin'))
+<div class="col-auto">
+    <button type="button" class="btn btn-gold"
+        data-bs-toggle="modal" data-bs-target="#addLeadModal">
+        <i class="fas fa-plus me-1"></i> Add Lead
+    </button>
+</div>
+@endif
     </div>
 </form>
 
@@ -274,7 +288,9 @@ svg.w-5.h-5 { display: none; }
                         <th>Milestone</th>
                         <th>Token Received</th>
                     @endif
-                 
+                 @if(auth()->user()->hasRole('admin'))
+                    <th>Assigned To</th>
+                    @endif
                     <th>Status</th>
                     @if(!$showLostCols && !$showWonCols)
                     <th>Add Date</th>
@@ -352,6 +368,31 @@ svg.w-5.h-5 { display: none; }
                             @endif
                         </td>
                     @endif
+
+                    @if(auth()->user()->hasRole('admin'))
+                    <td>
+                        <form action="{{ route('admin.lms.assign', $lead->id) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <select name="assigned_to" onchange="this.form.submit()"
+                                class="form-select form-select-sm bg-dark text-white border-secondary"
+                                style="min-width:140px; font-size:12px;">
+                                <option value="">— Unassigned —</option>
+                                @foreach($employees as $emp)
+                                    @php
+                                        $empToday = \App\Models\Lead::where('assigned_to', $emp->id)
+                                                        ->whereDate('updated_at', today())->count();
+                                    @endphp
+                                    <option value="{{ $emp->id }}"
+                                       {{ (int)$lead->assigned_to === (int)$emp->id ? 'selected' : '' }}
+                                        {{ ($empToday >= 5 && $lead->assigned_to != $emp->id) ? 'disabled' : '' }}>
+                                        {{ $emp->name }} ({{ $empToday }}/5){{ $empToday >= 5 ? ' — Full' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    </td>
+                    @endif
                     <td>
                         <span class="badge
                             @if($lead->status == 'won') bg-success
@@ -379,9 +420,11 @@ svg.w-5.h-5 { display: none; }
                             <a href="{{ route('admin.lms.show', $lead->id) }}" class="btn btn-sm btn-info" title="View">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning" title="Edit">
-                                <i class="fas fa-pen"></i>
-                            </a>
+                          @if(auth()->user()->hasRole('admin'))
+<a href="{{ route('admin.lms.edit', $lead->id) }}" class="btn btn-sm btn-warning" title="Edit">
+    <i class="fas fa-pen"></i>
+</a>
+@endif
                             @if(!$showLostCols && !$showWonCols && in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent','negotiation']))
                                 {{-- ✅ CHANGE 2: setLead mein lead data bhi pass kiya autofill ke liye --}}
                                 <button class="btn btn-sm btn-success" title="Action"
@@ -407,10 +450,12 @@ svg.w-5.h-5 { display: none; }
                                 onclick="loadHistory({{ $lead->id }})">
                                 <i class="fas fa-history"></i>
                             </button>
-                            <button type="button" class="btn btn-sm btn-danger" title="Delete"
-                                onclick="confirmDelete({{ $lead->id }})">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                           @if(auth()->user()->hasRole('admin'))
+<button type="button" class="btn btn-sm btn-danger" title="Delete"
+    onclick="confirmDelete({{ $lead->id }})">
+    <i class="fas fa-trash"></i>
+</button>
+@endif
                         </div>
 
                         {{-- Mobile: 3-dot dropdown menu --}}
@@ -422,9 +467,11 @@ svg.w-5.h-5 { display: none; }
                                 <a href="{{ route('admin.lms.show', $lead->id) }}">
                                     <i class="fas fa-eye"></i> View
                                 </a>
-                                <a href="{{ route('admin.lms.edit', $lead->id) }}">
-                                    <i class="fas fa-pen"></i> Edit
-                                </a>
+                              @if(auth()->user()->hasRole('admin'))
+<a href="{{ route('admin.lms.edit', $lead->id) }}">
+    <i class="fas fa-pen"></i> Edit
+</a>
+@endif
                                 @if(!$showLostCols && !$showWonCols && in_array($lead->status, ['call_schedule','call_back_required','qualified','not_responded','not_interested','not_in_scope','proposal_sent','negotiation']))
                                     <button type="button"
                                         onclick="closeAllDots(); setLead({{ $lead->id }}, '{{ $lead->status }}', {
@@ -444,10 +491,12 @@ svg.w-5.h-5 { display: none; }
                                     onclick="closeAllDots(); loadHistory({{ $lead->id }}); var m = new bootstrap.Modal(document.getElementById('historyModal')); m.show();">
                                     <i class="fas fa-history"></i> History
                                 </button>
-                                <button type="button" class="text-danger-item"
-                                    onclick="closeAllDots(); confirmDelete({{ $lead->id }});">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
+                               @if(auth()->user()->hasRole('admin'))
+<button type="button" class="text-danger-item"
+    onclick="closeAllDots(); confirmDelete({{ $lead->id }});">
+    <i class="fas fa-trash"></i> Delete
+</button>
+@endif
                             </div>
                         </div>
 
@@ -1153,6 +1202,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span style="color:#ddd; font-size:13px; line-height:1.5;">${item.comment}</span>
                         </div>`;
                     }
+
+                    if (item.assigned_to) {
+    fields += `
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <span style="font-size:16px; width:20px; text-align:center;">👤</span>
+        <span style="color:#f0c040; font-size:12px; font-weight:600; min-width:70px;">Assigned :</span>
+        <strong style="color:#fff; font-size:13px;">${item.assigned_to}</strong>
+    </div>`;
+}
 
                     if (item.document) {
                         fields += `

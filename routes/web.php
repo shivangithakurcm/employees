@@ -25,6 +25,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/index', fn() => view('index'))->name('index');
+    // Admin group ke andar, dashboard route ke neeche add karo
+Route::get('/employee/dashboard', [App\Http\Controllers\Admin\EmployeeDashboardController::class, 'index'])->name('employee.dashboard');
 
     // ✅ Follow-up Routes — admin group ke andar
     Route::prefix('followups')->name('followups.')->group(function () {
@@ -59,6 +61,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/lms/{lm}/edit',      [LmsController::class, 'edit'])->name('lms.edit');
     Route::put('/lms/{lm}',           [LmsController::class, 'update'])->name('lms.update');
     Route::delete('/lms/{lm}',        [LmsController::class, 'destroy'])->name('lms.destroy');
+    Route::patch('/lms/{lm}/assign',  [LmsController::class, 'assign'])->name('lms.assign');
 
     // ── Customer Routes ───────────────────────────────────────────────────────
     Route::resource('customers', CustomerController::class)

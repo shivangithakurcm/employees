@@ -11,15 +11,13 @@ class RoleSeeder extends Seeder
 {
     public function run()
     {
-        // Roles banana
-        $admin   = Role::firstOrCreate(['name' => 'admin']);
-        $manager = Role::firstOrCreate(['name' => 'manager']);
-        $sales   = Role::firstOrCreate(['name' => 'sales']);
+        // Sirf 2 roles
+        $admin    = Role::firstOrCreate(['name' => 'admin']);
+        $employee = Role::firstOrCreate(['name' => 'employee']);
 
-        // Permissions banana
+        // Permissions
         $permissions = [
             'view-all-leads',
-            'view-team-leads',
             'view-own-leads',
             'assign-leads',
             'delete-leads',
@@ -34,16 +32,8 @@ class RoleSeeder extends Seeder
         // Admin ko sab permissions
         $admin->syncPermissions($permissions);
 
-        // Manager ko limited permissions
-        $manager->syncPermissions([
-            'view-team-leads',
-            'view-own-leads',
-            'assign-leads',
-            'view-reports',
-        ]);
-
-        // Sales ko sirf apne leads
-        $sales->syncPermissions([
+        // Employee ko sirf apni leads
+        $employee->syncPermissions([
             'view-own-leads',
         ]);
     }

@@ -242,70 +242,64 @@ class EmployeeController extends Controller
     }
 
     public function saveStep5(Request $request, $id)
-    {
-        $employee = Employee::findOrFail($id);
+{
+    $employee = Employee::findOrFail($id);
 
-        if (!$employee->user_id) {
-            $request->validate([
-                'password' => 'required|min:6',
-                'role'     => 'required|in:manager,sales',
-            ], [
-                'password.required' => 'Login password set karna zaroori hai.',
-                'role.required'     => 'Login role select karna zaroori hai.',
-            ]);
-        }
-
-        $officialData = [
-            'doj'         => $request->doj,
-            'designation' => $request->designation,
-            'shift_id'    => $request->shift_id,
-            'salary'      => $request->salary,
-            'branch'      => $request->branch,
-            'permission'  => $request->permission,
-        ];
-
-        if ($request->filled('password')) {
-            $officialData['password'] = bcrypt($request->password);
-        } else {
-            $existing = $employee->officialDetail;
-            $officialData['password'] = $existing ? $existing->password : null;
-        }
-
-        $employee->officialDetail()->updateOrCreate(
-            ['employee_id' => $employee->id],
-            $officialData
-        );
-
-        $employee->designation = $request->designation;
-        $employee->save();
-
-        // ── User account bana/update karo login ke liye ──
-        if ($employee->user_id) {
-            $updateData = ['name' => $employee->name, 'email' => $employee->email];
-            if ($request->filled('password')) {
-                $updateData['password'] = bcrypt($request->password);
-            }
-            $employee->user->update($updateData);
-
-            if ($request->filled('role')) {
-                $employee->user->syncRoles([$request->role]);
-            }
-        } else {
-            $user = \App\Models\User::create([
-                'name'     => $employee->name,
-                'email'    => $employee->email,
-                'password' => bcrypt($request->password),
-            ]);
-            $user->assignRole($request->role);
-
-            $employee->user_id = $user->id;
-            $employee->save();
-        }
-
-        return redirect()->route('admin.employees.index')
-                         ->with('success', 'Employee added successfully.');
+    if (!$employee->user_id) {
+        $request->validate([
+            'password' => 'required|min:6',
+        ], [
+            'password.required' => 'Login password set karna zaroori hai.',
+        ]);
     }
 
+    $officialData = [
+        'doj'         => $request->doj,
+        'designation' => $request->designation,
+        'shift_id'    => $request->shift_id,
+        'salary'      => $request->salary,
+        'branch'      => $request->branch,
+        'permission'  => $request->permission,
+    ];
+
+    if ($request->filled('password')) {
+        $officialData['password'] = bcrypt($request->password);
+    } else {
+        $existing = $employee->officialDetail;
+        $officialData['password'] = $existing ? $existing->password : null;
+    }
+
+    $employee->officialDetail()->updateOrCreate(
+        ['employee_id' => $employee->id],
+        $officialData
+    );
+
+    $employee->designation = $request->designation;
+    $employee->save();
+
+    // ── User account bana/update karo ──
+    if ($employee->user_id) {
+        $updateData = ['name' => $employee->name, 'email' => $employee->email];
+        if ($request->filled('password')) {
+            $updateData['password'] = bcrypt($request->password);
+        }
+        $employee->user->update($updateData);
+        $employee->user->syncRoles(['employee']); // 👈 hamesha employee role
+    } else {
+        $user = \App\Models\User::create([
+            'name'     => $employee->name,
+            'email'    => $employee->email,
+            'password' => bcrypt($request->password),
+        ]);
+        $user->assignRole('employee'); // 👈 hamesha employee role
+
+        $employee->user_id = $user->id;
+        $employee->save();
+    }
+
+    return redirect()->route('admin.employees.index')
+                     ->with('success', 'Employee added successfully.');
+}
     // ─── Show Employee ────────────────────────────────────────────────────────
     public function show($id)
     {
@@ -450,32 +444,30 @@ class EmployeeController extends Controller
         $employee->save();
 
         /* ── USER ACCOUNT SYNC (login email/password/role) ── */
-        if ($employee->user_id) {
-            // Already linked — naam/email/password/role sab sync karo
-            $userUpdateData = [
-                'name'  => $employee->name,
-                'email' => $employee->email,
-            ];
-            if ($request->filled('password')) {
-                $userUpdateData['password'] = bcrypt($request->password);
-            }
-            $employee->user->update($userUpdateData);
+       /* ── USER ACCOUNT SYNC ── */
+if ($employee->user_id) {
+    $userUpdateData = [
+        'name'  => $employee->name,
+        'email' => $employee->email,
+    ];
+    if ($request->filled('password')) {
+        $userUpdateData['password'] = bcrypt($request->password);
+    }
+    $employee->user->update($userUpdateData);
+    $employee->user->syncRoles(['employee']); // 👈 hamesha employee role
 
-            if ($request->filled('role')) {
-                $employee->user->syncRoles([$request->role]);
-            }
-        } elseif ($request->filled('password') && $request->filled('role')) {
-            // Pehle se link nahi tha, par edit form se password+role diya gaya — naya account bana do
-            $user = \App\Models\User::create([
-                'name'     => $employee->name,
-                'email'    => $employee->email,
-                'password' => bcrypt($request->password),
-            ]);
-            $user->assignRole($request->role);
+} elseif ($request->filled('password')) {
+    // Pehle link nahi tha — naya user banao
+    $user = \App\Models\User::create([
+        'name'     => $employee->name,
+        'email'    => $employee->email,
+        'password' => bcrypt($request->password),
+    ]);
+    $user->assignRole('employee'); // 👈 hamesha employee role
 
-            $employee->user_id = $user->id;
-            $employee->save();
-        }
+    $employee->user_id = $user->id;
+    $employee->save();
+}
 
         return redirect()->route('admin.employees.show', $id)
                          ->with('success', 'Employee updated successfully');

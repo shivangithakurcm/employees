@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Lead;
 use App\Models\LeadHistory;
+use App\Models\FollowUp;
 use App\Models\Master\ProjectType;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class LmsController extends Controller
@@ -13,6 +15,11 @@ class LmsController extends Controller
     public function index(Request $request)
     {
         $query = Lead::query();
+
+        // ─── Employee sirf apni leads dekhe ──────────────────────────
+        if (auth()->user()->hasRole('employee')) {
+            $query->where('assigned_to', auth()->id());
+        }
 
         if (!$request->status) {
             $query->where(function($q) {
@@ -48,7 +55,6 @@ class LmsController extends Controller
                 $query->whereIn('status', ['lost', 'not_interested', 'not_in_scope']);
             } else {
                 $query->where('status', $request->status);
-                // ─── Won Project Type Filter ─────────────────────────
                 if ($request->status == 'won' && $request->project_type) {
                     $query->where('won_project_type', $request->project_type);
                 }
@@ -58,28 +64,39 @@ class LmsController extends Controller
         $leads        = $query->latest()->paginate(5);
         $projectTypes = ProjectType::all();
 
+        // ─── Counts bhi employee ke hisaab se ────────────────────────
+        $countQuery = auth()->user()->hasRole('employee')
+            ? Lead::where('assigned_to', auth()->id())
+            : Lead::query();
+
         $counts = [
-            'all'                => Lead::where(function($q) {
+            'all'                => (clone $countQuery)->where(function($q) {
                                         $q->where('discussion', 'add')->orWhereNull('discussion');
                                     })->count(),
-            'follow_up'          => Lead::whereIn('status', ['call_back_required', 'call_schedule', 'not_responded'])->count(),
-            'qualified'          => Lead::where('status', 'qualified')->count(),
-            'proposal_sent'      => Lead::where('status', 'proposal_sent')->count(),
-            'lost'               => Lead::whereIn('status', ['lost', 'not_interested', 'not_in_scope'])->count(),
-            'won'                => Lead::where('status', 'won')->count(),
-            'call_back_required' => Lead::whereIn('status', ['call_back_required', 'not_responded'])->count(),
-            'call_schedule'      => Lead::where('status', 'call_schedule')->count(),
-            'draft'              => Lead::where('discussion', 'draft')->count(),
+            'follow_up'          => (clone $countQuery)->whereIn('status', ['call_back_required', 'call_schedule', 'not_responded'])->count(),
+            'qualified'          => (clone $countQuery)->where('status', 'qualified')->count(),
+            'proposal_sent'      => (clone $countQuery)->where('status', 'proposal_sent')->count(),
+            'lost'               => (clone $countQuery)->whereIn('status', ['lost', 'not_interested', 'not_in_scope'])->count(),
+            'won'                => (clone $countQuery)->where('status', 'won')->count(),
+            'call_back_required' => (clone $countQuery)->whereIn('status', ['call_back_required', 'not_responded'])->count(),
+            'call_schedule'      => (clone $countQuery)->where('status', 'call_schedule')->count(),
+            'draft'              => (clone $countQuery)->where('discussion', 'draft')->count(),
         ];
 
-        // ─── Won counts per project type ─────────────────────────────
         foreach ($projectTypes as $pt) {
-            $counts['won_pt_' . $pt->id] = Lead::where('status', 'won')
+            $counts['won_pt_' . $pt->id] = (clone $countQuery)->where('status', 'won')
                                                 ->where('won_project_type', $pt->id)
                                                 ->count();
         }
 
-        return view('lms.lmsindex', compact('leads', 'counts', 'projectTypes'));
+        // ─── Admin ke liye employees list ────────────────────────────
+        $employees = auth()->user()->hasRole('admin')
+            ? User::role('employee')->get()
+            : collect();
+
+       // LmsController.php - index() ke end mein
+
+return view('lms.lmsindex', compact('leads', 'counts', 'projectTypes', 'employees'));
     }
 
     // ─── STORE ───────────────────────────────────────────────────────
@@ -115,6 +132,7 @@ class LmsController extends Controller
             'status'         => $request->status,
             'comment'        => $request->comment,
             'discussion'     => $request->discussion,
+            'assigned_to'    => $request->assigned_to ?? null,
         ]);
 
         LeadHistory::create([
@@ -128,25 +146,38 @@ class LmsController extends Controller
             'document'    => null,
         ]);
 
+        if (in_array($request->status, ['call_back_required', 'call_schedule', 'not_responded']) && $request->date) {
+            FollowUp::create([
+                'lead_id' => $lead->id,
+                'date'    => $request->date,
+                'time'    => $request->time ?? null,
+                'comment' => $request->comment ?? null,
+                'status'  => 'pending',
+            ]);
+        }
+
         return redirect()->route('admin.lms.show', $lead->id)->with('success', 'Lead added successfully!');
     }
 
     // ─── SHOW ────────────────────────────────────────────────────────
-  // ─── SHOW ────────────────────────────────────────────────────────
-public function show(Lead $lm)
-{
-    $followUps = \App\Models\FollowUp::where('lead_id', $lm->id)
-                    ->orderBy('date', 'desc')
-                    ->orderBy('time', 'desc')
-                    ->get();
+    public function show(Lead $lm)
+    {
+        $followUps = FollowUp::where('lead_id', $lm->id)
+                        ->orderBy('date', 'desc')
+                        ->orderBy('time', 'desc')
+                        ->get();
 
-    return view('lms.show', compact('lm', 'followUps'));
-}
+        return view('lms.show', compact('lm', 'followUps'));
+    }
+
     // ─── EDIT ────────────────────────────────────────────────────────
     public function edit(Lead $lm)
     {
         $projectTypes = ProjectType::all();
-        return view('lms.edit', compact('lm', 'projectTypes'));
+        $employees    = auth()->user()->hasRole('admin')
+            ? User::role('employee')->get()
+            : collect();
+        return view('lms.edit', compact('lm', 'projectTypes', 'employees'));
     }
 
     // ─── UPDATE ──────────────────────────────────────────────────────
@@ -185,9 +216,9 @@ public function show(Lead $lm)
             'status'         => $request->status,
             'comment'        => $request->comment,
             'discussion'     => $discussion,
+            'assigned_to'    => $request->assigned_to ?? $lm->assigned_to,
         ]);
 
-        // ─── File Uploads ───────────────────────────────────────────
         if ($request->hasFile('proposal_document')) {
             $lm->proposal_document = $request->file('proposal_document')->store('proposals', 'public');
         }
@@ -195,12 +226,9 @@ public function show(Lead $lm)
             $lm->revised_proposal = $request->file('revised_proposal')->store('proposals', 'public');
         }
 
-        // ─── Proposal Fields ────────────────────────────────────────
         $lm->amount             = $request->amount;
         $lm->timeline           = $request->timeline;
         $lm->negotiation_amount = $request->negotiation_amount;
-
-        // ─── Won Fields ─────────────────────────────────────────────
         $lm->won_name           = $request->won_name;
         $lm->won_contact        = $request->won_contact;
         $lm->won_email          = $request->won_email;
@@ -240,6 +268,16 @@ public function show(Lead $lm)
             ]);
         }
 
+        if (in_array($request->status, ['call_back_required', 'call_schedule', 'not_responded']) && $request->date) {
+            FollowUp::create([
+                'lead_id' => $lm->id,
+                'date'    => $request->date,
+                'time'    => $request->time ?? null,
+                'comment' => $request->comment ?? null,
+                'status'  => 'pending',
+            ]);
+        }
+
         $status = $request->status;
 
         if (in_array($status, ['call_back_required', 'call_schedule', 'not_responded'])) {
@@ -256,19 +294,18 @@ public function show(Lead $lm)
     }
 
     // ─── DESTROY ─────────────────────────────────────────────────────
-   // ─── DESTROY ─────────────────────────────────────────────────────
-public function destroy(Lead $lm)
-{
-    $lm->delete();
+    public function destroy(Lead $lm)
+    {
+        $lm->delete();
 
-    $params = array_filter([
-        'status' => request('redirect_status'),
-        'type'   => request('redirect_type'),
-    ]);
+        $params = array_filter([
+            'status' => request('redirect_status'),
+            'type'   => request('redirect_type'),
+        ]);
 
-    return redirect()->route('admin.lms.index', $params)
-                     ->with('success', 'Lead deleted successfully.');
-}
+        return redirect()->route('admin.lms.index', $params)
+                         ->with('success', 'Lead deleted successfully.');
+    }
 
     // ─── ACTION ──────────────────────────────────────────────────────
     public function action(Request $request)
@@ -289,7 +326,6 @@ public function destroy(Lead $lm)
         $lead->time    = $request->time    ?? null;
         $lead->comment = $request->comment ?? null;
 
-        // ─── Proposal Sent ──────────────────────────────────────────
         if ($request->action_type === 'proposal_sent') {
             if ($request->hasFile('proposal')) {
                 $path = $request->file('proposal')->store('proposals', 'public');
@@ -300,7 +336,6 @@ public function destroy(Lead $lm)
             $lead->timeline = $request->timeline;
         }
 
-        // ─── Negotiation ────────────────────────────────────────────
         if ($request->action_type === 'negotiation') {
             if ($request->hasFile('revised_proposal')) {
                 $path = $request->file('revised_proposal')->store('proposals', 'public');
@@ -310,7 +345,6 @@ public function destroy(Lead $lm)
             $lead->negotiation_amount = $request->negotiation_amount;
         }
 
-        // ─── Won ────────────────────────────────────────────────────
         if ($request->action_type === 'won') {
             $lead->won_name           = $request->won_name;
             $lead->won_contact        = $request->won_contact;
@@ -339,7 +373,6 @@ public function destroy(Lead $lm)
 
         $lead->save();
 
-        // ─── History Save ────────────────────────────────────────────
         LeadHistory::create([
             'lead_id'            => $lead->id,
             'event_type'         => 'status_changed',
@@ -355,6 +388,16 @@ public function destroy(Lead $lm)
                                         : null,
         ]);
 
+        if (in_array($lead->status, ['call_back_required', 'call_schedule', 'not_responded']) && $request->date) {
+            FollowUp::create([
+                'lead_id' => $lead->id,
+                'date'    => $request->date,
+                'time'    => $request->time ?? null,
+                'comment' => $request->comment ?? null,
+                'status'  => 'pending',
+            ]);
+        }
+
         if ($request->action_type === 'won') {
             return redirect()->route('admin.lms.index', ['status' => 'won'])
                              ->with('success', '🎉 Lead Won!');
@@ -364,30 +407,47 @@ public function destroy(Lead $lm)
     }
 
     // ─── HISTORY API ─────────────────────────────────────────────────
-    public function history($id)
-    {
-        $records = LeadHistory::where('lead_id', $id)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+  public function history($id)
+{
+    $records = LeadHistory::where('lead_id', $id)
+                ->orderBy('created_at', 'asc')
+                ->get();
 
-        $history = $records->map(function($h) {
-            return [
-                'event_type'         => $h->event_type,
-                'from_status'        => $h->from_status,
-                'to_status'          => $h->to_status,
-                'comment'            => $h->comment,
-                'document'           => $h->document         ? asset('storage/' . $h->document)         : null,
-                'revised_document'   => $h->revised_document ? asset('storage/' . $h->revised_document) : null,
-                'negotiation_amount' => $h->negotiation_amount ?? null,
-                'date'               => $h->date,
-                'time'               => $h->time,
-                'created_at'         => $h->created_at->format('d-m-Y H:i:s'),
-            ];
-        });
+    $lead = Lead::with('assignedTo')->find($id);  // 👈 add karo
 
-        return response()->json([
-            'status'  => true,
-            'history' => $history,
-        ]);
+    $history = $records->map(function($h) use ($lead) {
+        return [
+            'event_type'         => $h->event_type,
+            'from_status'        => $h->from_status,
+            'to_status'          => $h->to_status,
+            'comment'            => $h->comment,
+            'document'           => $h->document         ? asset('storage/' . $h->document)         : null,
+            'revised_document'   => $h->revised_document ? asset('storage/' . $h->revised_document) : null,
+            'negotiation_amount' => $h->negotiation_amount ?? null,
+            'date'               => $h->date,
+            'time'               => $h->time,
+            'created_at'         => $h->created_at->format('d-m-Y H:i:s'),
+            'assigned_to'        => $lead->assignedTo?->name ?? null,  // 👈 add karo
+        ];
+    });
+
+    return response()->json(['status' => true, 'history' => $history]);
+}
+
+   public function assign(Request $request, Lead $lm)
+{
+    $maxPerDay = 5;
+
+    $todayCount = Lead::where('assigned_to', $request->assigned_to)
+                      ->whereDate('created_at', today()) // 👈 updated_at ki jagah created_at
+                      ->count();
+
+    if ($todayCount >= $maxPerDay) {
+        return redirect()->back()->with('error', 
+            'This employee ko aaj already 5 leads assign ho chuki hain!');
     }
+
+    $lm->update(['assigned_to' => $request->assigned_to]);
+    return redirect()->back()->with('success', 'Lead assigned successfully!');
+}
 }

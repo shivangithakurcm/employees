@@ -32,4 +32,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function assignedLeads()
+{
+    return $this->hasMany(\App\Models\Lead::class, 'assigned_to');
+}
 }
