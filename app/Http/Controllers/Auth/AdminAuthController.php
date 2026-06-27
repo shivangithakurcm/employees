@@ -13,14 +13,14 @@ class AdminAuthController extends Controller
         return view('auth.login');
     }
 
- public function login(Request $request)
+public function login(Request $request)
 {
     $request->validate([
         'email'    => 'required|email',
         'password' => 'required',
     ]);
 
-    if (!Auth::attempt($request->only('email', 'password'))) {
+    if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
         return back()->withErrors(['email' => 'Invalid credentials']);
     }
 
@@ -28,14 +28,13 @@ class AdminAuthController extends Controller
 
     $user = auth()->user();
 
-    // Role check karke redirect
-    if ($user->role === 'employee') {
-        return redirect()->route('admin.employee.dashboard');
+    if ($user->hasRole('employee')) {
+        return redirect()->intended(route('admin.employee.dashboard'));
     }
 
-    return redirect()->route('admin.dashboard');
+    return redirect()->intended(route('admin.dashboard'));
 }
-    public function logout(Request $request)
+  public function logout(Request $request)
     {
         Auth::logout();
         return redirect()->route('login');

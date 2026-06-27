@@ -80,7 +80,10 @@ public function assignedLeads()
     return $this->hasMany(\App\Models\Lead::class, 'assigned_to');
 }
 // App/Models/Lead.php
-
+public function getNameAttribute()
+{
+    return trim($this->first_name . ' ' . $this->last_name);
+}
 protected static function booted()
 {
     static::addGlobalScope('assigned', function ($query) {

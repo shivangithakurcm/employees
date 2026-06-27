@@ -11,32 +11,42 @@ use Carbon\Carbon;
 class FollowUpController extends Controller
 {
     // Aaj ke + overdue followups page
-  public function today()
+public function today()
 {
     $today = Carbon::today();
+    $isEmployee = auth()->user()->hasRole('employee');
+    $userId = auth()->id();
 
-    FollowUp::whereDate('date', '<', $today)
-        ->where('status', 'pending')
-        ->update(['status' => 'overdue']);
+    // ✅ Sirf apne leads ke followups overdue mark ho
+    $overdueQuery = FollowUp::whereDate('date', '<', $today)->where('status', 'pending');
+    if ($isEmployee) {
+        $overdueQuery->whereHas('lead', fn($q) => $q->where('assigned_to', $userId));
+    }
+    $overdueQuery->update(['status' => 'overdue']);
 
+    // ✅ Aaj ke followups — employee ke liye filtered
     $todayList = FollowUp::with('lead')
         ->whereDate('date', $today)
         ->where('status', 'pending')
+        ->when($isEmployee, fn($q) => $q->whereHas('lead', fn($l) => $l->where('assigned_to', $userId)))
         ->orderBy('time')
         ->get();
 
+    // ✅ Overdue — employee ke liye filtered
     $overdueList = FollowUp::with('lead')
         ->where('status', 'overdue')
+        ->when($isEmployee, fn($q) => $q->whereHas('lead', fn($l) => $l->where('assigned_to', $userId)))
         ->orderBy('date')
         ->orderBy('time')
         ->get();
 
+    // ✅ Done today — employee ke liye filtered
     $doneToday = FollowUp::whereDate('date', $today)
         ->where('status', 'done')
+        ->when($isEmployee, fn($q) => $q->whereHas('lead', fn($l) => $l->where('assigned_to', $userId)))
         ->count();
 
-    
-    $employees = auth()->user()->hasRole('admin')
+    $employees = !$isEmployee
         ? \App\Models\User::role('employee')
             ->withCount([
                 'assignedLeads as total_leads',
@@ -47,7 +57,7 @@ class FollowUpController extends Controller
         : collect();
 
     return view('admin.followups.today', compact(
-        'todayList', 'overdueList', 'doneToday', 'employees' // 👈 employees add kiya
+        'todayList', 'overdueList', 'doneToday', 'employees'
     ));
 }
     // Naya followup schedule karo (lead detail page se)

@@ -154,12 +154,12 @@
                     onmouseout="this.style.background='transparent'">
                     <td style="color:#555;font-size:12px;padding:10px 12px;">{{ $i+1 }}</td>
                     <td style="padding:10px 12px;">
-                        <p style="color:#fff;font-size:13px;margin:0;font-weight:500;">
-                            {{ $fu->lead->name ?? '—' }}
-                        </p>
-                        <p style="color:#888;font-size:11px;margin:0;">
-                            {{ $fu->lead->email ?? '' }}
-                        </p>
+                       <p style="color:#fff;font-size:13px;margin:0;font-weight:500;">
+    {{ trim(($fu->lead->first_name ?? '') . ' ' . ($fu->lead->last_name ?? '')) ?: '—' }}
+</p>
+<p style="color:#888;font-size:11px;margin:0;">
+    {{ $fu->lead->email ?? $fu->lead->contact_number ?? '' }}
+</p>
                     </td>
                     <td style="padding:10px 12px;">
                         <span style="color:#E24B4A;font-size:12px;">
