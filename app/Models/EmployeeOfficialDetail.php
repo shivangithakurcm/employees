@@ -8,7 +8,7 @@ class EmployeeOfficialDetail extends Model
 {
     protected $fillable = [
         'employee_id', 'doj', 'designation',
-        'salary', 'branch', 'permission', 'password'
+        'salary', 'branch', 'permission', 'password','shift_id',
     ];
 
     public function employee()

@@ -9,7 +9,7 @@ class EmployeeBankDetail extends Model
     protected $fillable = [
         'employee_id', 'holder_name',
         'bank_name', 'account_number',
-        'ifsc_code', 'photo','Passbook'
+        'ifsc_code', 'photo','passbook'
     ];
 
     public function employee()

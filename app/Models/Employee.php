@@ -10,7 +10,7 @@ class Employee extends Model
     use HasFactory;
 
     // ==============================
-    // ✅ MASS ASSIGNABLE FIELDS
+    //
     // ==============================
     protected $fillable = [
         'name',
